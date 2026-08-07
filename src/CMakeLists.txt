@@ -58,7 +58,6 @@ target_link_libraries(Pico2UltraHiResUSBDDC
 # Add the standard include files to the build
 target_include_directories(Pico2UltraHiResUSBDDC PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../pico-extras
         ${CMAKE_CURRENT_SOURCE_DIR}/..
         ${CMAKE_CURRENT_LIST_DIR}/../CMSIS/Core/Include
         ${CMAKE_CURRENT_LIST_DIR}/../CMSIS/DSP/Include
@@ -72,8 +71,7 @@ target_link_libraries(Pico2UltraHiResUSBDDC
         hardware_clocks
         hardware_dma
         hardware_pwm
-        pico_audio
-        pico_audio_i2s
+        usb_device
         hardware_uart
         hardware_i2c
         pico_float

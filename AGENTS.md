@@ -19,7 +19,7 @@ Non-goals (for this repo):
 
 ### 2.1 Build (CLI)
 
-This project uses Pico SDK + CMake. The repository includes `pico-extras/`, `CMSIS/`, and `lufa/` sources.
+This project uses Pico SDK + CMake. The repository includes `CMSIS/` and `lufa/` sources. Pico Extras is fetched by CMake at a pinned revision because the firmware uses its minimal USB device stack.
 
 Linux/macOS example:
 
@@ -64,7 +64,6 @@ Notes:
 Top-level:
 - `src/` : firmware sources (Core0/Core1, USB, upsampling, I2S/PIO/DMA)
 - `CMSIS/` : CMSIS-Core and CMSIS-DSP (vendored)
-- `pico-extras/` : Pico extras (vendored)
 - `lufa/` : LUFA headers used for USB Audio class descriptor structures
 - `make_digitalFilter/` : Python scripts to design filter coefficients
 

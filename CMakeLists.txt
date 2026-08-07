@@ -36,10 +36,25 @@ include(example_auto_set_url.cmake)
 
 project(Pico2UltraHiResUSBDDC C CXX ASM)
 
-# Use bundled pico‑extras from the repository
-add_subdirectory(pico-extras)
-set(PICO_EXTRAS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/pico-extras)
-include(pico_extras_import.cmake)
+# The firmware still uses pico-extras' minimal USB device stack. Keep it out of
+# the source tree and pin the revision matching the previously vendored snapshot.
+include(FetchContent)
+FetchContent_Declare(
+    pico_extras
+    GIT_REPOSITORY https://github.com/raspberrypi/pico-extras.git
+    GIT_TAG ed98c7acb694757715ede81c044a7404e1762499
+    PATCH_COMMAND git apply --whitespace=nowarn
+        ${CMAKE_CURRENT_LIST_DIR}/cmake/patches/pico-extras-usb-buffer-size.patch
+)
+if(COMMAND FetchContent_MakeAvailable)
+    FetchContent_MakeAvailable(pico_extras)
+else()
+    FetchContent_GetProperties(pico_extras)
+    if(NOT pico_extras_POPULATED)
+        FetchContent_Populate(pico_extras)
+    endif()
+    add_subdirectory(${pico_extras_SOURCE_DIR} ${pico_extras_BINARY_DIR})
+endif()
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()

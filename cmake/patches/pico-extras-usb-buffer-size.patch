@@ -1,0 +1,12 @@
+diff --git a/src/rp2_common/usb_device/include/pico/usb_device.h b/src/rp2_common/usb_device/include/pico/usb_device.h
+--- a/src/rp2_common/usb_device/include/pico/usb_device.h
++++ b/src/rp2_common/usb_device/include/pico/usb_device.h
+@@ -89,6 +89,6 @@ struct usb_buffer {
+     uint8_t *data;
+-    uint8_t data_len;
+-    uint8_t data_max;
++    uint16_t data_len;
++    uint16_t data_max;
+     // then...
+     bool valid; // aka user owned
+ };
