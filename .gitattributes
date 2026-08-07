@@ -1,0 +1,4 @@
+# Exclude vendored dependencies from GitHub Linguist language statistics.
+CMSIS/** linguist-vendored
+pico-extras/** linguist-vendored
+lufa/** linguist-vendored
