@@ -37,36 +37,7 @@
     "raspberry-pi-pico.cmakePath": "${HOME}/.pico-sdk/cmake/v4.3.4/bin/cmake",
     "raspberry-pi-pico.ninjaPath": "${HOME}/.pico-sdk/ninja/v1.13.2/ninja",
     "raspberry-pi-pico.python3Path": "${HOME}/.pico-sdk/python/3.12.1/python.exe",
-
     "files.associations": {
-        "audioclasscommon.h": "c",
-        "pio.h": "c",
-        "multicore.h": "c",
-        "audio.h": "c",
-        "audio_i2s.h": "c",
-        "simple_queue.h": "c",
-        "stdbool.h": "c",
-        "pdm_output.h": "c",
-        "usb_device.h": "c",
-        "stdio.h": "c",
-        "usb_device_private.h": "c",
-        "usb_common.h": "c",
-        "uart.h": "c",
-        "usb.h": "c",
-        "rp2040_usb_device_enumeration.h": "c",
-        "usb_stream_helper.h": "c",
-        "algorithm": "c",
-        "compare": "c",
-        "cstdint": "c",
-        "array": "c",
-        "string": "c",
-        "string_view": "c",
-        "debug_with_gpio.h": "c",
-        "ringbuffer.h": "c",
-        "i2s_pio_interface.h": "c",
-        "upsampling.h": "c",
-        "timer.h": "c",
-        "usb_device_control.h": "c",
-        "nonblocking_i2c.h": "c"
+        "*.h": "c"
     }
 }
