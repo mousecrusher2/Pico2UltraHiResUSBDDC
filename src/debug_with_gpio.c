@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "pico/stdlib.h"
+
 static uint8_t gpio_assignment[4] = {0};
 static volatile uint32_t offtime = 10;
 
@@ -60,8 +62,7 @@ extern void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
 }
 
 extern void uint16_to_gpio(int16_t in_value) {
-    value2gpio outvalue;
-    outvalue.vUINT16_T = in_value;
+    const value2gpio outvalue = {.vUINT16_T = in_value};
 
     gpio_put(gpio_assignment[0], false);
     gpio_put(gpio_assignment[1], false);
@@ -91,8 +92,7 @@ extern void uint16_to_gpio(int16_t in_value) {
 }
 
 extern void uint8_to_gpio(uint8_t in_value) {
-    value2gpio outvalue;
-    outvalue.vUINT16_T = in_value & 0xFF;
+    const value2gpio outvalue = {.vUINT16_T = in_value};
 
     gpio_put(gpio_assignment[0], false);
     gpio_put(gpio_assignment[1], false);

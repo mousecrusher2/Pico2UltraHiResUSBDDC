@@ -11,8 +11,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "pico/stdlib.h"
-
 #define GPIO_FOR_DEBUG_0 (2)
 #define GPIO_FOR_DEBUG_1 (3)
 #define GPIO_FOR_DEBUG_2 (4)

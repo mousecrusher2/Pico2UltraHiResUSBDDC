@@ -12,8 +12,6 @@
 #include <stdint.h>
 
 #include "hardware/sync.h"
-#include "pico/multicore.h"
-#include "pico/stdlib.h"
 
 typedef struct RB {
     volatile uint32_t size_buffer;
@@ -27,11 +25,11 @@ typedef struct RB {
 
 extern int16_t initialize_ringbuffer(uint32_t size, bool no_spinlock, RINGBUFFER *ringbuffer);
 extern void clear_ringbuffer(RINGBUFFER *ringbuffer);
-extern bool __not_in_flash_func(ringbuffer_is_full)(RINGBUFFER *ringbuffer);
-extern int64_t __not_in_flash_func(get_size_using)(RINGBUFFER *ringbuffer);
-extern int64_t __not_in_flash_func(get_size_remain)(RINGBUFFER *ringbuffer);
-extern uint32_t __not_in_flash_func(get_read_point)(RINGBUFFER *ringbuffer);
-extern uint32_t __not_in_flash_func(get_write_point)(RINGBUFFER *ringbuffer);
+extern bool __not_in_flash_func(ringbuffer_is_full)(const RINGBUFFER *ringbuffer);
+extern int64_t __not_in_flash_func(get_size_using)(const RINGBUFFER *ringbuffer);
+extern int64_t __not_in_flash_func(get_size_remain)(const RINGBUFFER *ringbuffer);
+extern uint32_t __not_in_flash_func(get_read_point)(const RINGBUFFER *ringbuffer);
+extern uint32_t __not_in_flash_func(get_write_point)(const RINGBUFFER *ringbuffer);
 extern int16_t __not_in_flash_func(ringbuf_read_spinlock)(int32_t *output, RINGBUFFER *ringbuffer);
 extern int16_t __not_in_flash_func(ringbuf_write_spinlock)(int32_t input, RINGBUFFER *ringbuffer);
 extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
@@ -40,7 +38,7 @@ extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
     RINGBUFFER *ringbuffer
 );
 extern int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(
-    int32_t *input,
+    const int32_t *input,
     uint32_t size,
     RINGBUFFER *ringbuffer
 );
@@ -59,7 +57,7 @@ extern int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(
     RINGBUFFER *ringbuffer
 );
 extern int64_t __not_in_flash_func(ringbuf_write_array_no_spinlock)(
-    int32_t *input,
+    const int32_t *input,
     uint32_t size,
     RINGBUFFER *ringbuffer
 );

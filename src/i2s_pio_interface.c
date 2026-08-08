@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "common.h"
+#include "hardware/clocks.h"
 
 // PIO
 
@@ -22,10 +23,10 @@ void I2S_16bit_program_init(
     uint data_pin,
     uint sideset_base,
     uint freq,
-    pio_sm_config *sm_config_out,
-    uint *offset_out
+    pio_sm_config *const sm_config_out,
+    uint *const offset_out
 ) {
-    uint offset = pio_add_program(pio, &I2S_16bit_program);
+    const uint offset = pio_add_program(pio, &I2S_16bit_program);
     pio_sm_config sm_config = I2S_16bit_program_get_default_config(offset);
 
     pio_gpio_init(pio, data_pin);
@@ -42,8 +43,8 @@ void I2S_16bit_program_init(
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
-    float div = (float)clock_get_hz(clk_sys)
-        / (float)((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
+    const float div = (float)clock_get_hz(clk_sys)
+        / (float)(freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1() * 128u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -59,10 +60,10 @@ void I2S_32bit_program_init(
     uint data_pin,
     uint sideset_base,
     uint freq,
-    pio_sm_config *sm_config_out,
-    uint *offset_out
+    pio_sm_config *const sm_config_out,
+    uint *const offset_out
 ) {
-    uint offset = pio_add_program(pio, &I2S_32bit_program);
+    const uint offset = pio_add_program(pio, &I2S_32bit_program);
     pio_sm_config sm_config = I2S_32bit_program_get_default_config(offset);
 
     pio_gpio_init(pio, data_pin);
@@ -79,8 +80,8 @@ void I2S_32bit_program_init(
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
-    float div = (float)clock_get_hz(clk_sys)
-        / (float)((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
+    const float div = (float)clock_get_hz(clk_sys)
+        / (float)(freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1() * 128u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -96,10 +97,10 @@ void I2S_32bit_inv_program_init(
     uint data_pin,
     uint sideset_base,
     uint freq,
-    pio_sm_config *sm_config_out,
-    uint *offset_out
+    pio_sm_config *const sm_config_out,
+    uint *const offset_out
 ) {
-    uint offset = pio_add_program(pio, &I2S_32bit_inv_program);
+    const uint offset = pio_add_program(pio, &I2S_32bit_inv_program);
     pio_sm_config sm_config = I2S_32bit_program_get_default_config(offset);
 
     pio_gpio_init(pio, data_pin);
@@ -116,8 +117,8 @@ void I2S_32bit_inv_program_init(
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
-    float div = (float)clock_get_hz(clk_sys)
-        / (float)((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
+    const float div = (float)clock_get_hz(clk_sys)
+        / (float)(freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1() * 128u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -128,13 +129,12 @@ void I2S_32bit_inv_program_init(
 }
 
 // サンプルレート変更時に、PIOの分周率を再設定する
-void I2S_freq_init(PIO pio, uint sm, pio_sm_config *sm_config, uint offset) {
+void I2S_freq_init(PIO pio, uint sm, pio_sm_config *const sm_config, uint offset) {
     pio_sm_set_enabled(pio, sm, false);
 
-    float div = (float)clock_get_hz(clk_sys)
-        / (float)((audio_state.freq * get_ratio_upsampling_core0(audio_state.freq)
-                      * get_ratio_upsampling_core1())
-            << 7u);
+    const float div = (float)clock_get_hz(clk_sys)
+        / (float)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq)
+            * get_ratio_upsampling_core1() * 128u);
     sm_config_set_clkdiv(sm_config, div);
     pio_sm_init(pio, sm, offset, sm_config);
     pio_sm_set_enabled(pio, sm, true);

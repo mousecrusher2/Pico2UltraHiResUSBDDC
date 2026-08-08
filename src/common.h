@@ -12,7 +12,6 @@
 #include <stdint.h>
 
 #include "ess_specific.h"
-#include "pico/stdlib.h"
 #include "ringbuffer.h"
 
 #define CORE1_FIR_MODE_HALF_BAND (0)
@@ -41,7 +40,6 @@
 // The Hi-Power Mode, Core0 uses 384KHz FIR Filter
 #define POWER_MODE_SWITCH_PIN (0)
 #define ALWAYS_HIGH_POWER (true)
-#define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -65,7 +63,7 @@
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
 #define KIND_ESS_DAC (ESS_DAC_NONE)
-#define I2C_ESS_DAC_ADDR (ADDR0_NONE)
+#define I2C_ESS_DAC_ADDR (ADDR0_NONE) // 8-bit address byte as shown in the datasheet.
 #define ENABLE_ES9038Q2M_DEPOP (false)
 #define ENABLE_ESS_DAC_VOLUME (false)
 #define ENABLE_ESS_DAC_THD_COMPEN (false)
@@ -135,7 +133,7 @@
 #define DEPTH_DMA_TX_BUFFER (3)
 
 // FB水位(50%が望ましい)
-#define SIZE_BUFFER_FB_THRESHOLD (SIZE_UPSAMPLE_CORE0 >> 1u)
+#define SIZE_BUFFER_FB_THRESHOLD (SIZE_UPSAMPLE_CORE0 / INT32_C(2))
 
 // Feedback(±1サンプルになる値を返す 基準は1000)
 #define FB_ADJ_LIMIT (1000)
@@ -203,14 +201,14 @@ inline float saturation_f32(float in, float max, float min) {
 }
 
 // int32_t型をfloat型にまとめてキャスト
-inline void int32_to_float_array(int32_t *input, float *output, uint32_t length) {
+inline void int32_to_float_array(const int32_t *const input, float *const output, uint32_t length) {
     for (uint32_t i = 0; i < length; i++) {
         output[i] = (float)input[i];
     }
 }
 
 // float型をint32_t型にまとめてキャスト
-inline void float_to_int32_array(float *input, int32_t *output, uint32_t length) {
+inline void float_to_int32_array(const float *const input, int32_t *const output, uint32_t length) {
     for (uint32_t i = 0; i < length; i++) {
         output[i] = (int32_t)input[i];
     }
@@ -232,16 +230,16 @@ inline uint16_t ratio_to_bitshift(uint16_t ratio) {
 
 // アップサンプリング倍率取得関数(Core0)
 inline uint16_t get_ratio_upsampling_core0(uint32_t freq) {
-    uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
+    const uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
     uint16_t ratio;
     switch (freq) {
         case 192000:
         case 176400:
-            ratio = base >> 2;
+            ratio = base / 4u;
             break;
         case 96000:
         case 88200:
-            ratio = base >> 1;
+            ratio = base / 2u;
             break;
         case 48000:
         case 44100:
@@ -257,7 +255,7 @@ inline uint16_t get_ratio_upsampling_core0(uint32_t freq) {
 }
 
 inline uint16_t get_ratio_upsampling_core1(void) {
-    uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
+    const uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
     if (ratio == 0) {
         return 1;
     }

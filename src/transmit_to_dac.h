@@ -11,8 +11,6 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "pico/stdlib.h"
-#include "upsampling.h"
 
 #define SIZE_DMA_TX_BUF \
     (49 * 2 * CORE0_UP_RATIO_MAX * CORE1_UP_RATIO_MAX * CORE1_PROCESS_US / 1000 + 256)

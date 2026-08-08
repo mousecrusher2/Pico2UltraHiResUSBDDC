@@ -15,6 +15,7 @@ Checks: >
   readability-duplicate-include,
   readability-inconsistent-declaration-parameter-name,
   readability-misleading-indentation,
+  readability-non-const-parameter,
   readability-redundant-control-flow,
   readability-redundant-declaration,
   readability-simplify-boolean-expr,
@@ -30,6 +31,15 @@ FormatStyle: file
 CheckOptions:
   bugprone-assert-side-effect.AssertMacros: 'assert,hard_assert'
   bugprone-narrowing-conversions.WarnOnFloatingPointNarrowingConversion: true
+  # This check currently runs only in C++; keep the intended C policy explicit
+  # so values, pointees, and pointer values are all covered when C support lands.
+  misc-const-correctness.AnalyzePointers: true
+  misc-const-correctness.AnalyzeValues: true
+  misc-const-correctness.TransformPointersAsPointers: true
+  misc-const-correctness.TransformPointersAsValues: true
+  misc-const-correctness.TransformValues: true
+  misc-const-correctness.WarnPointersAsPointers: true
+  misc-const-correctness.WarnPointersAsValues: true
   # Limit include-cleaner to libc by ignoring project, generated, and SDK headers.
   misc-include-cleaner.IgnoreHeaders: '.*[\\/](src|build)[\\/].*;.*[\\/](pico|hardware|boards|usb)[\\/].*;.*[\\/](CMSIS|LUFA)[\\/].*'
   misc-include-cleaner.MissingIncludes: true

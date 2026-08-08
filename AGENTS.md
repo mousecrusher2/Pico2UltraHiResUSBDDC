@@ -128,7 +128,7 @@ Common edits:
   - `BYPASS_CORE1_UPSAMPLING`, `CORE0_UPSAMPLING_192K`, `ENABLE_1536KHZ_OUTPUT`
   - `DEFAULT_GAIN_RATIO` (important to avoid clipping)
 - Power mode:
-  - `ALWAYS_HIGH_POWER`, `ALWAYS_LOW_POWER`, `V_CORE_HI`, `V_CORE_LO`
+  - `ALWAYS_HIGH_POWER`, `V_CORE_HI`, `V_CORE_LO`
 
 When changing pinouts, ensure the PCB wiring matches and that no pin conflicts exist (PIO, I2C, LED, etc.).
 
@@ -179,6 +179,7 @@ Guidelines:
 ## 9. Coding conventions and guardrails
 
 - Language: C11.
+- Use shifts only for bit representation, packing, extraction, or masks; use `*` and `/` for arithmetic.
 - Keep functions small and single-purpose in real-time modules.
 - Prefer static allocation for audio buffers. Memory fragmentation or heap usage can break real-time.
 - Any change touching these files requires extra care:

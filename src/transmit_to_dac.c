@@ -61,7 +61,7 @@ static inline bool dma_tx_any_running(void) {
 
 static void __not_in_flash_func(dma_tx_chain_service)(void) {
     for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
-        bool busy = dma_channel_is_busy(dma_ch[i]);
+        const bool busy = dma_channel_is_busy(dma_ch[i]);
         if (dma_ch_state[i] == DMA_CH_STATE_ARMED) {
             if (busy) {
                 dma_ch_state[i] = DMA_CH_STATE_RUNNING;
@@ -94,7 +94,7 @@ static void __not_in_flash_func(dma_tx_chain_service)(void) {
             break;
         }
 
-        uint32_t rp = dma_tx.rp;
+        const uint32_t rp = dma_tx.rp;
         dma_channel_set_read_addr(dma_ch[idle_idx], dma_tx.data[rp].tx_buf, false);
         dma_channel_set_trans_count(dma_ch[idle_idx], dma_tx.data[rp].tx_size, false);
         dma_tx.rp++;
@@ -203,7 +203,7 @@ static volatile bool enable_output_prev = false;
 extern volatile absolute_time_t time_start_output;
 
 void __not_in_flash_func(dma_tx_start)(void) {
-    int32_t length = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
+    const int32_t length = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
 
     // バッファに規定量以上のデータが溜まってから出力開始
     if (length > SIZE_BUFFER_FB_THRESHOLD) {
@@ -229,8 +229,9 @@ void __not_in_flash_func(dma_tx_start)(void) {
     if (enable_output) {
         // 入ってくるデータが枯渇した、またはDMA送信バッファに規定量以上データが蓄積されているときはデータ送信処理をしない
         if ((length > 0) && (dma_tx.using < SIZE_DMA_TX_BUF_STACK)) {
-            uint32_t core1_block_len = upsampling_core1_get_block_len();
-            int32_t max_in_len = (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
+            const uint32_t core1_block_len = upsampling_core1_get_block_len();
+            const int32_t max_in_len =
+                (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
             int32_t transmit_ref_size =
                 (int32_t)((float)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq))
                     / 1000.0f * (CORE1_PROCESS_US / 1000.0f));
@@ -242,9 +243,9 @@ void __not_in_flash_func(dma_tx_start)(void) {
             }
 
             while (dma_tx.using < SIZE_DMA_TX_BUF_STACK) {
-                int32_t avail_len_L = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
-                int32_t avail_len_R = (int32_t)get_size_using(&buffer_upsr_data_Rch_0);
-                int32_t avail_len = (avail_len_L < avail_len_R) ? avail_len_L : avail_len_R;
+                const int32_t avail_len_L = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
+                const int32_t avail_len_R = (int32_t)get_size_using(&buffer_upsr_data_Rch_0);
+                const int32_t avail_len = (avail_len_L < avail_len_R) ? avail_len_L : avail_len_R;
                 if (avail_len <= 0) {
                     break;
                 }
@@ -275,7 +276,7 @@ void __not_in_flash_func(dma_tx_start)(void) {
                 }
 
                 // Core1?????????????????????????????????250us????????????????)
-                int32_t out_len = (int32_t)upsampling_process_core1(
+                const int32_t out_len = (int32_t)upsampling_process_core1(
                     from_core0_Lch,
                     from_core0_Rch,
                     upsr_core1_Lch,
@@ -286,15 +287,15 @@ void __not_in_flash_func(dma_tx_start)(void) {
                     break;
                 }
 
-                uint32_t wp = dma_tx.wp;
-                int32_t *tx_buf = (int32_t *)dma_tx.data[wp].tx_buf;
+                const uint32_t wp = dma_tx.wp;
+                int32_t *const tx_buf = (int32_t *)dma_tx.data[wp].tx_buf;
                 int count = 0;
                 for (int32_t i = 0; i < out_len; i++) {
                     tx_buf[count++] = (int32_t)upsr_core1_Lch[i];
                     tx_buf[count++] = (int32_t)upsr_core1_Rch[i];
                 }
 
-                uint32_t save = save_and_disable_interrupts();
+                const uint32_t save = save_and_disable_interrupts();
                 dma_tx.data[wp].tx_size = count;
                 dma_tx.wp++;
                 if (dma_tx.wp >= DEPTH_DMA_TX_BUFFER) {
@@ -319,7 +320,7 @@ void dma_stop_and_clear(void) {
     }
 
     // DMAステータスをリセット
-    dma_hw->ints0 = (1u << dma_ch[0]) | (1u << dma_ch[1]);
+    dma_hw->ints0 = (UINT32_C(1) << (uint32_t)dma_ch[0]) | (UINT32_C(1) << (uint32_t)dma_ch[1]);
 
     // FIFOバッファをクリア
     pio_sm_clear_fifos(pio0, 0);

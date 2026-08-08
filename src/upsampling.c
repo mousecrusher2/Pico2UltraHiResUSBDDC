@@ -9,13 +9,11 @@
 
 #include <arm_math.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "common.h"
-#include "debug_with_gpio.h"
 #include "fft_fir_core0.h"
 #include "fft_fir_core1.h"
 #include "ringbuffer.h"
@@ -56,14 +54,14 @@ static CORE1_POLY_STATE core1_poly_state_R;
 static const CORE1_POLY_PROFILE *core1_poly_profile_active;
 
 static void __not_in_flash_func(halfband_interp2)(
-    const float *input,
-    float *output,
+    const float *const input,
+    float *const output,
     uint32_t length,
-    const float *even_taps,
+    const float *const even_taps,
     uint32_t even_taps_len,
     float center,
     uint32_t center_index,
-    float *state
+    float *const state
 ) {
     for (uint32_t n = 0; n < length; n++) {
         for (uint32_t i = even_taps_len - 1; i > 0; i--) {
@@ -161,15 +159,15 @@ extern void clear_bq_filter_delay(void) {
 }
 
 static void __not_in_flash_func(polyphase_interp2)(
-    const CORE1_POLY_PROFILE *profile,
-    const float *input,
-    float *output,
+    const CORE1_POLY_PROFILE *const profile,
+    const float *const input,
+    float *const output,
     uint32_t length,
-    CORE1_POLY_STATE *state
+    CORE1_POLY_STATE *const state
 ) {
-    uint32_t phase_len = profile->phase_len;
-    const float *even = profile->even_taps;
-    const float *odd = profile->odd_taps;
+    const uint32_t phase_len = profile->phase_len;
+    const float *const even = profile->even_taps;
+    const float *const odd = profile->odd_taps;
     uint32_t idx = state->index;
 
     for (uint32_t n = 0; n < length; n++) {
@@ -183,7 +181,7 @@ static void __not_in_flash_func(polyphase_interp2)(
         float acc_odd = 0.0f;
         uint32_t h = idx;
         for (uint32_t k = 0; k < phase_len; k++) {
-            float sample = state->hist[h];
+            const float sample = state->hist[h];
             acc_even += even[k] * sample;
             acc_odd += odd[k] * sample;
             if (h == 0) {
@@ -217,7 +215,7 @@ extern void clear_core1_polyphase_state(void) {
 }
 
 uint32_t upsampling_core1_get_block_len(void) {
-    uint16_t ratio = get_ratio_upsampling_core1();
+    const uint16_t ratio = get_ratio_upsampling_core1();
     if (ratio <= 1) {
         return 0;
     }
@@ -225,8 +223,8 @@ uint32_t upsampling_core1_get_block_len(void) {
         return 0;
     }
 
-    uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
-    uint32_t freq_out = freq_in * ratio;
+    const uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+    const uint32_t freq_out = freq_in * ratio;
     if (freq_out == 1536000u) {
         return 0;
     }
@@ -239,7 +237,7 @@ uint32_t upsampling_core1_get_block_len(void) {
         return 0;
     }
 #endif
-    const FFT_FIR_PROFILE *profile =
+    const FFT_FIR_PROFILE *const profile =
         fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
     if (profile == NULL) {
         return 0;
@@ -252,12 +250,12 @@ uint32_t upsampling_core1_get_block_len(void) {
 // upsampling biquad IIR filter NOS統合版 (RAM上で実行する)
 static uint32_t __not_in_flash_func(fast_BQ_filter_2x_3)(
     uint32_t length,
-    float *p_in,
-    float *p_out,
-    arm_biquad_casd_df1_inst_f32 *S
+    const float *p_in,
+    float *const p_out,
+    arm_biquad_casd_df1_inst_f32 *const S
 ) {
     uint32_t length_buffer = length;
-    float *NOS_buffer = (float *)malloc(sizeof(float) * (length << 1));
+    float *const NOS_buffer = (float *)malloc(sizeof(float) * (length * 2u));
     float *p_NOS_buffer = NOS_buffer;
 
     // サンプル数を2倍にする NOS方式
@@ -267,21 +265,21 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_2x_3)(
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(S, NOS_buffer, p_out, length << 1);
+    arm_biquad_cascade_df1_f32(S, NOS_buffer, p_out, length * 2u);
 
     free(NOS_buffer);
-    return length << 1;
+    return length * 2u;
 }
 
 // upsampling biquad IIR filter NOS統合版 (RAM上で実行する)
 static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(
     uint32_t length,
-    float *p_in,
-    float *p_out,
-    arm_biquad_casd_df1_inst_f32 *S
+    const float *p_in,
+    float *const p_out,
+    arm_biquad_casd_df1_inst_f32 *const S
 ) {
     uint32_t length_buffer = length;
-    float *NOS_buffer = (float *)malloc(sizeof(float) * (length << 2));
+    float *const NOS_buffer = (float *)malloc(sizeof(float) * (length * 4u));
     float *p_NOS_buffer = NOS_buffer;
 
     // サンプル数を4倍にする NOS方式
@@ -293,10 +291,10 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(S, NOS_buffer, p_out, length << 2);
+    arm_biquad_cascade_df1_f32(S, NOS_buffer, p_out, length * 4u);
 
     free(NOS_buffer);
-    return length << 2;
+    return length * 4u;
 }
 
 // アップサンプリングに使用するメモリを静的確保
@@ -308,10 +306,10 @@ static float fft_output_L[FFT_FIR_MAX_OUTPUT];
 static float fft_output_R[FFT_FIR_MAX_OUTPUT];
 
 void __not_in_flash_func(upsampling_process_core0)(void) {
-    int32_t size_buf = (int32_t)get_size_using(&buffer_ep_Lch);
-    uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
+    const int32_t size_buf = (int32_t)get_size_using(&buffer_ep_Lch);
+    const uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
     uint32_t save;
-    bool is_44k1_family =
+    const bool is_44k1_family =
         (audio_state.freq == 44100 || audio_state.freq == 88200 || audio_state.freq == 176400);
 
     if (size_buf <= 0) {
@@ -319,7 +317,7 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
     }
 
     if (ratio <= 1) {
-        uint32_t length = saturation_i32(size_buf, FFT_FIR_MAX_INPUT, 0);
+        const uint32_t length = saturation_i32(size_buf, FFT_FIR_MAX_INPUT, 0);
         if (get_size_remain(&buffer_upsr_data_Lch_0) < (int32_t)length) {
             return;
         }
@@ -336,21 +334,18 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
         return;
     }
 
-    uint16_t stage1_ratio = 0;
-    if (ratio == 8 && !is_high_power_mode) {
-        stage1_ratio = 4;
-    }
+    const uint16_t stage1_ratio = (ratio == 8 && !is_high_power_mode) ? 4 : 0;
 
     if (stage1_ratio > 0) {
-        const FFT_FIR_PROFILE *profile_stage1 =
+        const FFT_FIR_PROFILE *const profile_stage1 =
             fft_fir_core0_select_profile(audio_state.freq, stage1_ratio, is_high_power_mode);
         if (profile_stage1 == NULL) {
             goto single_stage;
         }
 
-        uint32_t input_len = profile_stage1->input_len;
-        uint32_t stage1_out_len = input_len * stage1_ratio;
-        uint32_t output_len = stage1_out_len * 2u;
+        const uint32_t input_len = profile_stage1->input_len;
+        const uint32_t stage1_out_len = input_len * stage1_ratio;
+        const uint32_t output_len = stage1_out_len * 2u;
         if (output_len != (input_len * ratio)) {
             goto single_stage;
         }
@@ -367,7 +362,7 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
         ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, input_len, &buffer_ep_Rch);
         restore_interrupts(save);
 
-        uint32_t produced_stage1 = fft_fir_core0_process_block_stage(
+        const uint32_t produced_stage1 = fft_fir_core0_process_block_stage(
             profile_stage1,
             (float *)buffer_copy_from_ep_left_ch,
             (float *)buffer_copy_from_ep_right_ch,
@@ -379,14 +374,16 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
             return;
         }
 
-        const float *hb_even = is_44k1_family ? fft_fir_halfband_even_44 : fft_fir_halfband_even_48;
-        float hb_center = is_44k1_family ? fft_fir_halfband_center_44 : fft_fir_halfband_center_48;
-        uint32_t hb_len =
+        const float *const hb_even =
+            is_44k1_family ? fft_fir_halfband_even_44 : fft_fir_halfband_even_48;
+        const float hb_center =
+            is_44k1_family ? fft_fir_halfband_center_44 : fft_fir_halfband_center_48;
+        const uint32_t hb_len =
             is_44k1_family ? FFT_FIR_HALF_BAND_EVEN_TAPS_44 : FFT_FIR_HALF_BAND_EVEN_TAPS_48;
-        uint32_t hb_center_index =
+        const uint32_t hb_center_index =
             is_44k1_family ? FFT_FIR_HALF_BAND_CENTER_INDEX_44 : FFT_FIR_HALF_BAND_CENTER_INDEX_48;
-        float *hb_state_L = is_44k1_family ? hb_state_L_44 : hb_state_L_48;
-        float *hb_state_R = is_44k1_family ? hb_state_R_44 : hb_state_R_48;
+        float *const hb_state_L = is_44k1_family ? hb_state_L_44 : hb_state_L_48;
+        float *const hb_state_R = is_44k1_family ? hb_state_R_44 : hb_state_R_48;
 
         halfband_interp2(
             fft_stage1_L,
@@ -416,15 +413,15 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
         return;
     }
 
-single_stage:
-    const FFT_FIR_PROFILE *profile =
+single_stage: {
+    const FFT_FIR_PROFILE *const profile =
         fft_fir_core0_select_profile(audio_state.freq, ratio, is_high_power_mode);
     if (profile == NULL) {
         return;
     }
 
-    uint32_t input_len = profile->input_len;
-    uint32_t output_len = input_len * profile->up_ratio;
+    const uint32_t input_len = profile->input_len;
+    const uint32_t output_len = input_len * profile->up_ratio;
 
     if (size_buf < (int32_t)input_len) {
         return;
@@ -438,7 +435,7 @@ single_stage:
     ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, input_len, &buffer_ep_Rch);
     restore_interrupts(save);
 
-    uint32_t produced = fft_fir_core0_process_block(
+    const uint32_t produced = fft_fir_core0_process_block(
         profile,
         (float *)buffer_copy_from_ep_left_ch,
         (float *)buffer_copy_from_ep_right_ch,
@@ -454,15 +451,16 @@ single_stage:
     ringbuf_write_array_spinlock((int32_t *)fft_output_R, produced, &buffer_upsr_data_Rch_0);
     restore_interrupts(save);
 }
+}
 
 uint32_t __not_in_flash_func(upsampling_process_core1)(
-    float *in_L,
-    float *in_R,
-    float *out_L,
-    float *out_R,
+    const float *const in_L,
+    const float *const in_R,
+    float *const out_L,
+    float *const out_R,
     uint32_t length
 ) {
-    uint16_t ratio = get_ratio_upsampling_core1();
+    const uint16_t ratio = get_ratio_upsampling_core1();
     if (ratio <= 1) {
         memcpy(out_L, in_L, sizeof(float) * length);
         memcpy(out_R, in_R, sizeof(float) * length);
@@ -472,7 +470,7 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
         goto fallback_iir;
     }
 
-    uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+    const uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
 #if CORE1_FIR_MODE == CORE1_FIR_MODE_POLYPHASE
     if (ratio == 2) {
         const CORE1_POLY_PROFILE *profile = NULL;
@@ -519,19 +517,19 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
         }
     }
 #elif CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
-    bool is_44k1_family =
+    const bool is_44k1_family =
         (audio_state.freq == 44100 || audio_state.freq == 88200 || audio_state.freq == 176400);
     if (ratio == 2 && freq_in >= 352800) {
-        const float *hb_even =
+        const float *const hb_even =
             is_44k1_family ? fft_fir_halfband_even_44_hi : fft_fir_halfband_even_48_hi;
-        float hb_center =
+        const float hb_center =
             is_44k1_family ? fft_fir_halfband_center_44_hi : fft_fir_halfband_center_48_hi;
-        uint32_t hb_len =
+        const uint32_t hb_len =
             is_44k1_family ? FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI : FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI;
-        uint32_t hb_center_index = is_44k1_family ? FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI
-                                                  : FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI;
-        float *hb_state_L = is_44k1_family ? hb_state_core1_L_44_hi : hb_state_core1_L_48_hi;
-        float *hb_state_R = is_44k1_family ? hb_state_core1_R_44_hi : hb_state_core1_R_48_hi;
+        const uint32_t hb_center_index = is_44k1_family ? FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI
+                                                        : FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI;
+        float *const hb_state_L = is_44k1_family ? hb_state_core1_L_44_hi : hb_state_core1_L_48_hi;
+        float *const hb_state_R = is_44k1_family ? hb_state_core1_R_44_hi : hb_state_core1_R_48_hi;
         halfband_interp2(
             in_L,
             out_L,
@@ -555,22 +553,22 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
         return length * 2u;
     }
 #endif
-    const FFT_FIR_PROFILE *profile =
+    const FFT_FIR_PROFILE *const profile =
         fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
     if (profile == NULL) {
         goto fallback_iir;
     }
 
-    uint32_t block_len = profile->input_len;
+    const uint32_t block_len = profile->input_len;
     if (block_len == 0 || length < block_len) {
         return 0;
     }
 
-    uint32_t blocks = length / block_len;
+    const uint32_t blocks = length / block_len;
     uint32_t out_count = 0;
     for (uint32_t b = 0; b < blocks; b++) {
-        uint32_t offset = b * block_len;
-        uint32_t produced = fft_fir_core1_process_block(
+        const uint32_t offset = b * block_len;
+        const uint32_t produced = fft_fir_core1_process_block(
             profile,
             in_L + offset,
             in_R + offset,
@@ -586,12 +584,12 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
 
 fallback_iir:
     if (ratio == 4) {
-        uint32_t len_L = fast_BQ_filter_4x_0(length, in_L, out_L, &biquad_filter4L);
+        const uint32_t len_L = fast_BQ_filter_4x_0(length, in_L, out_L, &biquad_filter4L);
         fast_BQ_filter_4x_0(length, in_R, out_R, &biquad_filter4R);
         return len_L;
     }
     if (ratio == 2) {
-        uint32_t len_L = fast_BQ_filter_2x_3(length, in_L, out_L, &biquad_filter3L);
+        const uint32_t len_L = fast_BQ_filter_2x_3(length, in_L, out_L, &biquad_filter3L);
         fast_BQ_filter_2x_3(length, in_R, out_R, &biquad_filter3R);
         return len_L;
     }

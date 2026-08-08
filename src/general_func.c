@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "hardware/clocks.h"
+#include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "hardware/vreg.h"
 #include "nonblocking_i2c.h"

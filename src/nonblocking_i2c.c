@@ -22,11 +22,10 @@ static i2c_hw_t *i2c_hw;
 static int dma_ch;
 static dma_channel_config c_dma;
 static uint32_t i2c_tx_cmd_data[16];
-static uint16_t tx_length = 0;
 
 static void i2c_irq_handler(void);
 
-void i2c_dma_initialize(i2c_inst_t *i2c) {
+void i2c_dma_initialize(i2c_inst_t *const i2c) {
     dma_ch = dma_claim_unused_channel(true);
 
     c_dma = dma_channel_get_default_config(dma_ch);
@@ -41,13 +40,12 @@ bool i2c_dma_is_busy(void) {
 }
 
 void i2c_write_dma(
-    i2c_inst_t *i2c,
+    i2c_inst_t *const i2c,
     uint8_t addr_7bit,
-    const uint8_t *data,
+    const uint8_t *const data,
     size_t len,
     bool nostop
 ) {
-    tx_length = len;
     if (len == 0 || data == NULL) {
         return;
     }
@@ -82,12 +80,12 @@ void i2c_write_dma(
 
     // コマンドデータを作成
     for (size_t byte_ctr = 0; byte_ctr < len; byte_ctr++) {
-        bool first = (byte_ctr == 0);
-        bool last = (byte_ctr == len - 1);
+        const bool first = (byte_ctr == 0);
+        const bool last = (byte_ctr == len - 1);
 
         i2c_tx_cmd_data[byte_ctr] = bool_to_bit(first && i2c->restart_on_next)
                 << I2C_IC_DATA_CMD_RESTART_LSB
-            | bool_to_bit(last && !nostop) << I2C_IC_DATA_CMD_STOP_LSB | *data++;
+            | bool_to_bit(last && !nostop) << I2C_IC_DATA_CMD_STOP_LSB | data[byte_ctr];
     }
 
     // I2C無効化 → アドレス設定 → 有効化
@@ -129,7 +127,7 @@ static void i2c_irq_handler(void) {
 }
 
 // ---------------------- ring buffer ----------------------
-extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *ringbuffer) {
+extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *const ringbuffer) {
     ringbuffer->size_buffer = size;
     ringbuffer->write_point = 0;
     ringbuffer->read_point = 0;
@@ -138,13 +136,13 @@ extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *ringbuff
     return 0;
 }
 
-extern void clear_i2c_ringbuffer(I2C_RINGBUFFER *ringbuffer) {
+extern void clear_i2c_ringbuffer(I2C_RINGBUFFER *const ringbuffer) {
     ringbuffer->write_point = 0;
     ringbuffer->read_point = 0;
     ringbuffer->size_using = 0;
 }
 
-extern bool i2c_ringbuf_is_full(I2C_RINGBUFFER *ringbuffer) {
+extern bool i2c_ringbuf_is_full(const I2C_RINGBUFFER *const ringbuffer) {
     if (ringbuffer->write_point - ringbuffer->read_point >= ringbuffer->size_buffer) {
         return true;
     } else {
@@ -152,23 +150,23 @@ extern bool i2c_ringbuf_is_full(I2C_RINGBUFFER *ringbuffer) {
     }
 }
 
-extern int64_t i2c_ringbuf_get_size_using(I2C_RINGBUFFER *ringbuffer) {
+extern int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *const ringbuffer) {
     return ringbuffer->size_using;
 }
 
-extern int64_t i2c_ringbuf_get_size_remain(I2C_RINGBUFFER *ringbuffer) {
+extern int64_t i2c_ringbuf_get_size_remain(const I2C_RINGBUFFER *const ringbuffer) {
     return ringbuffer->size_buffer - ringbuffer->size_using;
 }
 
-extern uint32_t i2c_ringbuf_get_read_point(I2C_RINGBUFFER *ringbuffer) {
+extern uint32_t i2c_ringbuf_get_read_point(const I2C_RINGBUFFER *const ringbuffer) {
     return ringbuffer->read_point;
 }
 
-extern uint32_t i2c_ringbuf_get_write_point(I2C_RINGBUFFER *ringbuffer) {
+extern uint32_t i2c_ringbuf_get_write_point(const I2C_RINGBUFFER *const ringbuffer) {
     return ringbuffer->write_point;
 }
 
-extern int16_t i2c_ringbuf_write(I2C_RB_DATA *input, I2C_RINGBUFFER *ringbuffer) {
+extern int16_t i2c_ringbuf_write(const I2C_RB_DATA *const input, I2C_RINGBUFFER *const ringbuffer) {
     if (ringbuffer->size_using == ringbuffer->size_buffer) {
         return -1; // buffer is full
     }
@@ -182,7 +180,7 @@ extern int16_t i2c_ringbuf_write(I2C_RB_DATA *input, I2C_RINGBUFFER *ringbuffer)
     return 1;
 }
 
-extern int16_t i2c_ringbuf_read(I2C_RB_DATA *output, I2C_RINGBUFFER *ringbuffer) {
+extern int16_t i2c_ringbuf_read(I2C_RB_DATA *const output, I2C_RINGBUFFER *const ringbuffer) {
     if (ringbuffer->size_using == 0) {
         return -1; // buffer is empty
     }
@@ -197,12 +195,12 @@ extern int16_t i2c_ringbuf_read(I2C_RB_DATA *output, I2C_RINGBUFFER *ringbuffer)
 }
 
 void i2c_ringbuf_set_data(
-    i2c_inst_t *i2c,
+    i2c_inst_t *const i2c,
     uint8_t addr_7bit,
-    const uint8_t *data,
+    const uint8_t *const data,
     size_t len,
     bool nostop,
-    I2C_RB_DATA *output
+    I2C_RB_DATA *const output
 ) {
     output->i2c = i2c;
     output->addr_7bit = addr_7bit;
@@ -216,7 +214,7 @@ void i2c_dma_stop_and_clear(void) {
     dma_channel_abort(dma_ch);
 
     // DMAステータスをリセット
-    dma_hw->ints1 = (1u << dma_ch);
+    dma_hw->ints1 = UINT32_C(1) << (uint32_t)dma_ch;
 
     is_transferring_data = false;
 }

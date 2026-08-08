@@ -42,8 +42,8 @@ extern void i2c_write_dma(
 );
 
 extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *ringbuffer);
-extern int64_t i2c_ringbuf_get_size_using(I2C_RINGBUFFER *ringbuffer);
-extern int16_t i2c_ringbuf_write(I2C_RB_DATA *input, I2C_RINGBUFFER *ringbuffer);
+extern int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *ringbuffer);
+extern int16_t i2c_ringbuf_write(const I2C_RB_DATA *input, I2C_RINGBUFFER *ringbuffer);
 extern int16_t i2c_ringbuf_read(I2C_RB_DATA *output, I2C_RINGBUFFER *ringbuffer);
 extern void i2c_ringbuf_set_data(
     i2c_inst_t *i2c,

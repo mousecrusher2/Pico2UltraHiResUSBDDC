@@ -10,23 +10,13 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "debug_with_gpio.h"
 #include "ess_specific.h"
 #include "hardware/clocks.h"
-#include "hardware/dma.h"
-#include "hardware/i2c.h"
-#include "hardware/irq.h"
-#include "hardware/regs/intctrl.h"
-#include "hardware/sync.h"
-#include "hardware/timer.h"
-#include "hardware/uart.h"
 #include "hardware/vreg.h"
-#include "hardware/watchdog.h"
 #include "nonblocking_i2c.h"
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
 #include "ringbuffer.h"
-#include "transmit_to_dac.h"
 #include "upsampling.h"
 #include "usb_device_control.h"
 
@@ -58,7 +48,7 @@ static bool is_cleared_buffer = false;
 // NOLINTNEXTLINE(misc-use-internal-linkage): used by transmit_to_dac.c.
 volatile absolute_time_t time_start_output;
 
-static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t);
+static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *const t);
 
 // I2C送信インターバル
 static volatile absolute_time_t time_start_i2c_transfer = 0;
@@ -78,12 +68,13 @@ void restart_timer0(void) {
 }
 
 // アップサンプリング処理のタイミングをセットする
-static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t) {
+static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *const t) {
     (void)t;
     // ES9038Q2Mの周波数切り替え時のノイズ対策
     if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute()) {
         if (enable_output) {
-            int64_t elapsed_us = absolute_time_diff_us(time_start_output, get_absolute_time());
+            const int64_t elapsed_us =
+                absolute_time_diff_us(time_start_output, get_absolute_time());
             if (elapsed_us > TIME_ES9038Q2M_DEPOP_USEC) {
                 ess_dac_unmute();
             }
@@ -95,7 +86,7 @@ static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
     count++;
     if (count >= MILLISEC50) {
         // パワーモード切り替え
-        if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER)) {
+        if (gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) {
             // HiPowerMode
             if (!is_high_power_mode) {
                 is_high_power_mode = true;
@@ -251,14 +242,14 @@ int main(void) {
 
         // ESS DAC用I2C送信処理
         if (USE_ESS_DAC) {
-            int64_t elapsed_us =
+            const int64_t elapsed_us =
                 absolute_time_diff_us(time_start_i2c_transfer, get_absolute_time());
             static int size_transfer = 0;
 
             if ((!i2c_dma_is_busy())
                 && (elapsed_us
                     >= (int64_t)I2C_ESS_DAC_TRANSFER_INTERVAL_USEC * (size_transfer + 1))) {
-                uint16_t size_using = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
+                const uint16_t size_using = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
                 if (size_using > 0) {
                     I2C_RB_DATA buffer;
                     i2c_ringbuf_read(&buffer, &i2c_ringbuffer0);

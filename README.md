@@ -104,7 +104,7 @@ DAC ENABLE(PCM5102では不要)
 
 パワーモード切替(オプション)
 - POWERMODE SW PIN : GP0
-パワーモード切替を使用する際は、ALWAYS_HIGH_POWERおよびALWAYS_LOW_POWERをfalseにしてください。
+パワーモード切替を使用する際は、ALWAYS_HIGH_POWERをfalseにしてください。
 (LOW_POWERモードを使用する構成の場合、768kHz/705.6kHz以下を推奨します)
 
 ### アップサンプリング設定

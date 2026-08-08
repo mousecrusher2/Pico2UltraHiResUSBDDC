@@ -8,7 +8,6 @@
 #ifndef PICO2_I2S_PIO_INTERFACE_H
 #define PICO2_I2S_PIO_INTERFACE_H
 
-#include "hardware/clocks.h"
 #include "hardware/pio.h"
 #include "i2s.pio.h"
 

@@ -8,12 +8,10 @@
 #include "fft_fir_core0.h"
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "arm_math.h"
-#include "pico/stdlib.h"
 
 #define FFT_FIR_PACKED_LEN (FFT_FIR_MAX_PACKED_LEN)
 #define FFT_FIR_TIME_LEN (FFT_FIR_MAX_FFT_LEN)
@@ -64,29 +62,29 @@ static arm_rfft_fast_instance_f32 *fft_fir_get_rfft(uint16_t fft_len) {
 }
 
 static void __not_in_flash_func(rfft_packed_mul_store)(
-    float *restrict dst,
-    const float *restrict x,
-    const float *restrict h,
+    float *const restrict dst,
+    const float *const restrict x,
+    const float *const restrict h,
     uint32_t fft_len
 ) {
     dst[0] = x[0] * h[0];
     dst[1] = x[1] * h[1];
-    uint32_t half = fft_len / 2;
+    const uint32_t half = fft_len / 2;
     if (half > 1) {
         arm_cmplx_mult_cmplx_f32(x + 2, h + 2, dst + 2, half - 1);
     }
 }
 
 static void __not_in_flash_func(rfft_packed_mul_accum)(
-    float *restrict dst,
-    const float *restrict x,
-    const float *restrict h,
-    float *restrict scratch,
+    float *const restrict dst,
+    const float *const restrict x,
+    const float *const restrict h,
+    float *const restrict scratch,
     uint32_t fft_len
 ) {
     dst[0] += x[0] * h[0];
     dst[1] += x[1] * h[1];
-    uint32_t half = fft_len / 2;
+    const uint32_t half = fft_len / 2;
     if (half > 1) {
         arm_cmplx_mult_cmplx_f32(x + 2, h + 2, scratch + 2, half - 1);
         arm_add_f32(dst + 2, scratch + 2, dst + 2, (half - 1) * 2);
@@ -94,27 +92,25 @@ static void __not_in_flash_func(rfft_packed_mul_accum)(
 }
 
 static void __not_in_flash_func(fft_fir_process_channel)(
-    const FFT_FIR_PROFILE *profile,
-    const float *input,
-    float *output,
-    FFT_FIR_STATE *state
+    const FFT_FIR_PROFILE *const profile,
+    const float *const input,
+    float *const output,
+    FFT_FIR_STATE *const state
 ) {
-    uint32_t input_len = profile->input_len;
-    uint32_t up_ratio = profile->up_ratio;
-    uint32_t head_fft_len = profile->head_fft_len;
-    uint32_t head_block_len = profile->head_block_len;
-    uint32_t head_parts = profile->head_parts;
-    uint32_t tail_fft_len = profile->tail_fft_len;
-    uint32_t tail_block_len = profile->tail_block_len;
-    uint32_t tail_parts = profile->tail_parts;
-    const float *h_head = profile->h_head_fft;
-    const float *h_tail = profile->h_tail_fft;
+    const uint32_t input_len = profile->input_len;
+    const uint32_t up_ratio = profile->up_ratio;
+    const uint32_t head_fft_len = profile->head_fft_len;
+    const uint32_t head_block_len = profile->head_block_len;
+    const uint32_t head_parts = profile->head_parts;
+    const uint32_t tail_fft_len = profile->tail_fft_len;
+    const uint32_t tail_block_len = profile->tail_block_len;
+    const uint32_t tail_parts = profile->tail_parts;
+    const float *const h_head = profile->h_head_fft;
+    const float *const h_tail = profile->h_tail_fft;
 
-    arm_rfft_fast_instance_f32 *head_rfft = fft_fir_get_rfft(head_fft_len);
-    arm_rfft_fast_instance_f32 *tail_rfft = NULL;
-    if (tail_parts > 0) {
-        tail_rfft = fft_fir_get_rfft(tail_fft_len);
-    }
+    arm_rfft_fast_instance_f32 *const head_rfft = fft_fir_get_rfft(head_fft_len);
+    arm_rfft_fast_instance_f32 *const tail_rfft =
+        tail_parts > 0 ? fft_fir_get_rfft(tail_fft_len) : NULL;
     if (head_rfft == NULL || (tail_parts > 0 && tail_rfft == NULL)) {
         return;
     }
@@ -152,7 +148,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
     memcpy(state->head_x_hist[state->head_hist_index], fft_freq, sizeof(float) * head_fft_len);
 
     for (uint32_t phase = 0; phase < up_ratio; phase++) {
-        const float *h_phase = h_head + (phase * head_parts * head_fft_len);
+        const float *const h_phase = h_head + (phase * head_parts * head_fft_len);
         if (head_parts == 1) {
             rfft_packed_mul_store(
                 fft_freq,
@@ -161,8 +157,8 @@ static void __not_in_flash_func(fft_fir_process_channel)(
                 head_fft_len
             );
         } else if (head_parts == 2) {
-            const float *x0 = state->head_x_hist[state->head_hist_index];
-            const float *x1 = state->head_x_hist[state->head_hist_index ^ 1u];
+            const float *const x0 = state->head_x_hist[state->head_hist_index];
+            const float *const x1 = state->head_x_hist[state->head_hist_index ^ 1u];
             rfft_packed_mul_store(fft_freq, x0, h_phase, head_fft_len);
             rfft_packed_mul_accum(fft_freq, x1, h_phase + head_fft_len, fft_time, head_fft_len);
         } else {
@@ -174,7 +170,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
                 hist_index--;
             }
             for (uint32_t part = 1; part < head_parts; part++) {
-                const float *h = h_phase + (part * head_fft_len);
+                const float *const h = h_phase + (part * head_fft_len);
                 rfft_packed_mul_accum(
                     fft_freq,
                     state->head_x_hist[hist_index],
@@ -192,7 +188,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
 
         arm_rfft_fast_f32(head_rfft, fft_freq, fft_time, 1);
 
-        float *overlap = state->head_overlap[phase];
+        float *const overlap = state->head_overlap[phase];
         float *out = output + phase;
         for (uint32_t i = 0; i < input_len; i++, out += up_ratio) {
             *out = fft_time[i] + overlap[i];
@@ -223,13 +219,13 @@ static void __not_in_flash_func(fft_fir_process_channel)(
             );
 
             for (uint32_t phase = 0; phase < up_ratio; phase++) {
-                const float *h_phase = h_tail + (phase * tail_parts * tail_fft_len);
+                const float *const h_phase = h_tail + (phase * tail_parts * tail_fft_len);
                 if (tail_parts == 1) {
-                    const float *x0 = state->tail_x_hist[state->tail_hist_index];
+                    const float *const x0 = state->tail_x_hist[state->tail_hist_index];
                     rfft_packed_mul_store(fft_freq, x0, h_phase, tail_fft_len);
                 } else if (tail_parts == 2) {
-                    const float *x0 = state->tail_x_hist[state->tail_hist_index];
-                    const float *x1 = state->tail_x_hist[state->tail_hist_index ^ 1u];
+                    const float *const x0 = state->tail_x_hist[state->tail_hist_index];
+                    const float *const x1 = state->tail_x_hist[state->tail_hist_index ^ 1u];
                     rfft_packed_mul_store(fft_freq, x0, h_phase, tail_fft_len);
                     rfft_packed_mul_accum(
                         fft_freq,
@@ -252,7 +248,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
                         hist_index--;
                     }
                     for (uint32_t part = 1; part < tail_parts; part++) {
-                        const float *h = h_phase + (part * tail_fft_len);
+                        const float *const h = h_phase + (part * tail_fft_len);
                         rfft_packed_mul_accum(
                             fft_freq,
                             state->tail_x_hist[hist_index],
@@ -270,8 +266,8 @@ static void __not_in_flash_func(fft_fir_process_channel)(
 
                 arm_rfft_fast_f32(tail_rfft, fft_freq, fft_time, 1);
 
-                float *overlap = state->tail_overlap[phase];
-                float *tail_out = state->tail_out[phase];
+                float *const overlap = state->tail_overlap[phase];
+                float *const tail_out = state->tail_out[phase];
                 arm_add_f32(fft_time, overlap, tail_out, tail_block_len);
                 for (uint32_t i = 0; i < tail_block_len; i++) {
                     overlap[i] = fft_time[i + tail_block_len];
@@ -292,8 +288,8 @@ static void __not_in_flash_func(fft_fir_process_channel)(
             state->tail_out_index = 0;
         }
         for (uint32_t phase = 0; phase < up_ratio; phase++) {
-            const float *tail_out = state->tail_out[phase];
-            const float *tail_ptr = tail_out + tail_offset;
+            const float *const tail_out = state->tail_out[phase];
+            const float *const tail_ptr = tail_out + tail_offset;
             float *out = output + phase;
             for (uint32_t i = 0; i < input_len; i++, out += up_ratio) {
                 *out += tail_ptr[i];
@@ -381,28 +377,28 @@ const FFT_FIR_PROFILE *fft_fir_core0_select_profile(
 }
 
 uint32_t __not_in_flash_func(fft_fir_core0_process_block)(
-    const FFT_FIR_PROFILE *profile,
-    const float *in_L,
-    const float *in_R,
-    float *out_L,
-    float *out_R
+    const FFT_FIR_PROFILE *const profile,
+    const float *const in_L,
+    const float *const in_R,
+    float *const out_L,
+    float *const out_R
 ) {
     return fft_fir_core0_process_block_stage(profile, in_L, in_R, out_L, out_R, 0);
 }
 
 uint32_t __not_in_flash_func(fft_fir_core0_process_block_stage)(
-    const FFT_FIR_PROFILE *profile,
-    const float *in_L,
-    const float *in_R,
-    float *out_L,
-    float *out_R,
+    const FFT_FIR_PROFILE *const profile,
+    const float *const in_L,
+    const float *const in_R,
+    float *const out_L,
+    float *const out_R,
     uint8_t stage
 ) {
     if (profile == NULL) {
         return 0;
     }
 
-    uint8_t index = stage < FFT_FIR_STAGE_MAX ? stage : 0;
+    const uint8_t index = stage < FFT_FIR_STAGE_MAX ? stage : 0;
     fft_fir_process_channel(profile, in_L, out_L, &state_L[index]);
     fft_fir_process_channel(profile, in_R, out_R, &state_R[index]);
 

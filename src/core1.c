@@ -8,18 +8,8 @@
 #include <stdbool.h>
 
 #include "common.h"
-#include "debug_with_gpio.h"
-#include "hardware/clocks.h"
-#include "hardware/irq.h"
-#include "hardware/sync.h"
-#include "hardware/uart.h"
-#include "hardware/vreg.h"
-#include "hardware/watchdog.h"
-#include "pico/multicore.h"
 #include "pico/stdlib.h"
-#include "ringbuffer.h"
 #include "transmit_to_dac.h"
-#include "upsampling.h"
 
 void core1_main(void) { // NOLINT(misc-use-internal-linkage): launched from main.c.
     // I2S初期化
