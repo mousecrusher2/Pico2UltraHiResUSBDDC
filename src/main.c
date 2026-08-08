@@ -77,7 +77,7 @@ void restart_timer0(void) {
 }
 
 // アップサンプリング処理のタイミングをセットする
-bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t) {
+bool __not_in_flash_func(core0_timer_callback)(__unused struct repeating_timer *t) {
     // ES9038Q2Mの周波数切り替え時のノイズ対策
     if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute()) {
         if (enable_output) {

@@ -27,9 +27,6 @@ static char *descriptor_strings[] = {MFG_NAME, DEVICE_NAME, WEBSITE_ADDR};
 #define AUDIO_OUT_ENDPOINT (0x01U)
 #define AUDIO_IN_ENDPOINT 0x82U
 
-#undef AUDIO_SAMPLE_FREQ
-#define AUDIO_SAMPLE_FREQ(frq) (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
-
 #define AUDIO_MAX_SAMPLE_NUM (96 + 1) // (96kHz/1kHz +2)
 #define AUDIO_MAX_PACKET_SIZE \
     (2 * 3 * AUDIO_MAX_SAMPLE_NUM) // 2ch * 3byte/ch * (freq[kHz / 1[kHz] + 1)
@@ -350,10 +347,11 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(
             length = buffer_length_limiter(audio_state.freq, length);
             sample_num = length;
             while (sample_num--) {
-                data = ((int32_t)(*u16_ep++) | ((int32_t)*u16_ep++ << 16)) >> 0;
+                data = (int32_t)((uint32_t)u16_ep[0] | ((uint32_t)u16_ep[1] << 16));
                 buf_left_ch[count] = (float)data;
-                data = ((int32_t)(*u16_ep++) | ((int32_t)*u16_ep++ << 16)) >> 0;
+                data = (int32_t)((uint32_t)u16_ep[2] | ((uint32_t)u16_ep[3] << 16));
                 buf_right_ch[count] = (float)data;
+                u16_ep += 4;
                 count++;
             }
             break;
@@ -363,10 +361,11 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(
             length = buffer_length_limiter(audio_state.freq, length);
             sample_num = length;
             while (sample_num--) {
-                data = ((int32_t)(*u16_ep++ << 8) | ((int32_t)*u16_ep << 24)) >> 0;
+                data = (int32_t)(((uint32_t)u16_ep[0] << 8) | ((uint32_t)u16_ep[1] << 24));
                 buf_left_ch[count] = (float)data;
-                data = ((int32_t)(*u16_ep++ & 0xff00) | ((int32_t)*u16_ep++ << 16)) >> 0;
+                data = (int32_t)(((uint32_t)u16_ep[1] & 0xff00u) | ((uint32_t)u16_ep[2] << 16));
                 buf_right_ch[count] = (float)data;
+                u16_ep += 3;
                 count++;
             }
             break;
@@ -548,7 +547,7 @@ static const struct usb_transfer_type _audio_cmd_transfer_type = {
     .initial_packet_count = 1,
 };
 
-static bool as_set_alternate(struct usb_interface *interface, uint alt) {
+static bool as_set_alternate(__unused struct usb_interface *interface, uint alt) {
     assert(interface == &as_op_interface);
     switch (alt) {
         case 3:

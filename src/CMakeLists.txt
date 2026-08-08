@@ -21,8 +21,8 @@ set(DSP_SRC
         ${cmsis_dsp_SOURCE_DIR}/Source/ComplexMathFunctions/arm_cmplx_mult_cmplx_f32.c
         )
 
-# Add executable. Default name is the project name, version 0.1
-add_executable(Pico2UltraHiResUSBDDC
+# Project-owned firmware sources
+set(PROJECT_SRC
         main.c
         general_func.c
         usb_device_control.c
@@ -38,7 +38,20 @@ add_executable(Pico2UltraHiResUSBDDC
         debug_with_gpio.c
         ess_specific.c
         nonblocking_i2c.c
+)
+
+# Add executable. Default name is the project name, version 0.1
+add_executable(Pico2UltraHiResUSBDDC
+        ${PROJECT_SRC}
         ${DSP_SRC}
+)
+
+target_compile_options(Pico2UltraHiResUSBDDC PRIVATE
+        -ffast-math
+)
+
+set_property(SOURCE ${PROJECT_SRC}
+        APPEND PROPERTY COMPILE_OPTIONS -Wall -Wextra -Werror
 )
 
 pico_set_program_name(Pico2UltraHiResUSBDDC "Pico2UltraHiResUSBDDC")
@@ -81,7 +94,6 @@ target_link_libraries(Pico2UltraHiResUSBDDC
 pico_set_float_implementation(Pico2UltraHiResUSBDDC pico_vfp)
 
 target_link_options(Pico2UltraHiResUSBDDC PRIVATE
-        -flto
         "LINKER:-u,__wrap_printf"
         "LINKER:-u,__wrap_puts"
         "LINKER:-u,__wrap_putchar"

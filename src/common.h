@@ -205,14 +205,14 @@ inline float saturation_f32(float in, float max, float min) {
 
 // int32_t型をfloat型にまとめてキャスト
 inline void int32_to_float_array(int32_t *input, float *output, uint32_t length) {
-    for (int i = 0; i < length; i++) {
+    for (uint32_t i = 0; i < length; i++) {
         output[i] = (float)input[i];
     }
 }
 
 // float型をint32_t型にまとめてキャスト
 inline void float_to_int32_array(float *input, int32_t *output, uint32_t length) {
-    for (int i = 0; i < length; i++) {
+    for (uint32_t i = 0; i < length; i++) {
         output[i] = (int32_t)input[i];
     }
 }

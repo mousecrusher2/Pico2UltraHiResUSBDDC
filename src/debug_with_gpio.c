@@ -26,7 +26,7 @@ extern void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio
     }
 }
 
-extern inline void gpio_toggle(uint8_t gpio) {
+extern void gpio_toggle(uint8_t gpio) {
     if (gpio_get(gpio) == false) {
         gpio_put(gpio, true);
     } else {
@@ -41,7 +41,7 @@ static void gpio_offtime(void) {
     }
 }
 
-extern inline void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
+extern void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
     uint8_t in_buf = in_value;
 
     gpio_put(gpio, false);
@@ -56,7 +56,7 @@ extern inline void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
     sleep_us(1);
 }
 
-extern inline void uint16_to_gpio(int16_t in_value) {
+extern void uint16_to_gpio(int16_t in_value) {
     value2gpio outvalue;
     outvalue.vUINT16_T = in_value;
 
@@ -87,7 +87,7 @@ extern inline void uint16_to_gpio(int16_t in_value) {
     gpio_offtime();
 }
 
-extern inline void uint8_to_gpio(uint8_t in_value) {
+extern void uint8_to_gpio(uint8_t in_value) {
     value2gpio outvalue;
     outvalue.vUINT16_T = in_value & 0xFF;
 

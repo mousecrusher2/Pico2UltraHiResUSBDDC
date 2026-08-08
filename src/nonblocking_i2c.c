@@ -11,8 +11,6 @@
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
 
-#define bool_to_bit(x) ((uint) !!(x))
-
 static bool is_transferring_data;
 static i2c_hw_t *i2c_hw;
 static int dma_ch;
@@ -82,7 +80,7 @@ void i2c_write_dma(
     }
 
     // コマンドデータを作成
-    for (int byte_ctr = 0; byte_ctr < (int)len; byte_ctr++) {
+    for (size_t byte_ctr = 0; byte_ctr < len; byte_ctr++) {
         bool first = (byte_ctr == 0);
         bool last = (byte_ctr == len - 1);
 

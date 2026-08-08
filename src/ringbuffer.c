@@ -135,17 +135,17 @@ extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
 
     owner = spin_lock_blocking(ringbuffer->spinlock);
 
-    int32_t rx1_size = ((ringbuffer->read_point + size) > ringbuffer->size_buffer)
+    uint32_t rx1_size = ((ringbuffer->read_point + size) > ringbuffer->size_buffer)
         ? ringbuffer->size_buffer - ringbuffer->read_point
         : size;
-    int32_t rx2_size = size - rx1_size;
+    uint32_t rx2_size = size - rx1_size;
 
     memcpy(output, ringbuffer->buffer + ringbuffer->read_point, sizeof(int32_t) * rx1_size);
     if (rx2_size > 0) {
         memcpy(output + rx1_size, ringbuffer->buffer, sizeof(int32_t) * rx2_size);
     }
 
-    int32_t inner_read_point = ringbuffer->read_point + size;
+    uint32_t inner_read_point = ringbuffer->read_point + size;
     if (inner_read_point > ringbuffer->size_buffer) {
         inner_read_point -= ringbuffer->size_buffer;
     }
@@ -166,17 +166,17 @@ extern int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(
         return -1; // buffer is empty, or now buffer usage is not bigger than requested size
     }
 
-    int32_t rx1_size = ((ringbuffer->read_point + size) > ringbuffer->size_buffer)
+    uint32_t rx1_size = ((ringbuffer->read_point + size) > ringbuffer->size_buffer)
         ? ringbuffer->size_buffer - ringbuffer->read_point
         : size;
-    int32_t rx2_size = size - rx1_size;
+    uint32_t rx2_size = size - rx1_size;
 
     memcpy(output, ringbuffer->buffer + ringbuffer->read_point, sizeof(int32_t) * rx1_size);
     if (rx2_size > 0) {
         memcpy(output + rx1_size, ringbuffer->buffer, sizeof(int32_t) * rx2_size);
     }
 
-    int32_t inner_read_point = ringbuffer->read_point + size;
+    uint32_t inner_read_point = ringbuffer->read_point + size;
     if (inner_read_point > ringbuffer->size_buffer) {
         inner_read_point -= ringbuffer->size_buffer;
     }
@@ -205,17 +205,17 @@ extern int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(
 
     owner = spin_lock_blocking(ringbuffer->spinlock);
 
-    int32_t tx1_size = ((ringbuffer->write_point + size) > ringbuffer->size_buffer)
+    uint32_t tx1_size = ((ringbuffer->write_point + size) > ringbuffer->size_buffer)
         ? ringbuffer->size_buffer - ringbuffer->write_point
         : size;
-    int32_t tx2_size = size - tx1_size;
+    uint32_t tx2_size = size - tx1_size;
 
     memcpy(ringbuffer->buffer + ringbuffer->write_point, input, sizeof(int32_t) * tx1_size);
     if (tx2_size > 0) {
         memcpy(ringbuffer->buffer, input + tx1_size, sizeof(int32_t) * tx2_size);
     }
 
-    int32_t inner_write_point = ringbuffer->write_point + size;
+    uint32_t inner_write_point = ringbuffer->write_point + size;
     if (inner_write_point > ringbuffer->size_buffer) {
         inner_write_point -= ringbuffer->size_buffer;
     }
@@ -238,17 +238,17 @@ extern int64_t __not_in_flash_func(ringbuf_write_array_no_spinlock)(
         return -1; // buffer is full
     }
 
-    int32_t tx1_size = ((ringbuffer->write_point + size) > ringbuffer->size_buffer)
+    uint32_t tx1_size = ((ringbuffer->write_point + size) > ringbuffer->size_buffer)
         ? ringbuffer->size_buffer - ringbuffer->write_point
         : size;
-    int32_t tx2_size = size - tx1_size;
+    uint32_t tx2_size = size - tx1_size;
 
     memcpy(ringbuffer->buffer + ringbuffer->write_point, input, sizeof(int32_t) * tx1_size);
     if (tx2_size > 0) {
         memcpy(ringbuffer->buffer, input + tx1_size, sizeof(int32_t) * tx2_size);
     }
 
-    int32_t inner_write_point = ringbuffer->write_point + size;
+    uint32_t inner_write_point = ringbuffer->write_point + size;
     if (inner_write_point > ringbuffer->size_buffer) {
         inner_write_point -= ringbuffer->size_buffer;
     }

@@ -2,9 +2,6 @@
 
 cmake_minimum_required(VERSION 3.13)
 
-# Compiler Optimization
-add_compile_options(-Ofast -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -Wall -flto)
-
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -36,9 +33,21 @@ include(example_auto_set_url.cmake)
 
 project(Pico2UltraHiResUSBDDC C CXX ASM)
 
+include(CheckIPOSupported)
+check_ipo_supported(
+    RESULT IPO_SUPPORTED
+    OUTPUT IPO_ERROR
+    LANGUAGES C CXX
+)
+if(NOT IPO_SUPPORTED)
+    message(FATAL_ERROR "IPO/LTO is not supported: ${IPO_ERROR}")
+endif()
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+
 # Keep third-party source trees out of the repository and pin the revisions that
 # match the snapshots previously kept in-tree.
 include(FetchContent)
+find_package(Git REQUIRED)
 
 FetchContent_Declare(
     cmsis_dsp
@@ -66,8 +75,12 @@ FetchContent_Declare(
     lufa
     GIT_REPOSITORY https://github.com/abcminiuser/lufa.git
     GIT_TAG 550745aa15d9d764319580d2a4259b1762d3f1a3
-    PATCH_COMMAND git apply --whitespace=nowarn
-        ${CMAKE_CURRENT_LIST_DIR}/cmake/patches/lufa-standalone-descriptors.patch
+    PATCH_COMMAND
+        ${CMAKE_COMMAND}
+        -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+        -DPATCH_SOURCE_DIR=<SOURCE_DIR>
+        -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/cmake/patches/lufa-standalone-descriptors.patch
+        -P ${CMAKE_CURRENT_LIST_DIR}/cmake/apply-git-patch.cmake
 )
 if(COMMAND FetchContent_MakeAvailable)
     FetchContent_MakeAvailable(lufa)
@@ -82,8 +95,12 @@ FetchContent_Declare(
     pico_extras
     GIT_REPOSITORY https://github.com/raspberrypi/pico-extras.git
     GIT_TAG ed98c7acb694757715ede81c044a7404e1762499
-    PATCH_COMMAND git apply --whitespace=nowarn
-        ${CMAKE_CURRENT_LIST_DIR}/cmake/patches/pico-extras-usb-buffer-size.patch
+    PATCH_COMMAND
+        ${CMAKE_COMMAND}
+        -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+        -DPATCH_SOURCE_DIR=<SOURCE_DIR>
+        -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/cmake/patches/pico-extras-usb-buffer-size.patch
+        -P ${CMAKE_CURRENT_LIST_DIR}/cmake/apply-git-patch.cmake
 )
 if(COMMAND FetchContent_MakeAvailable)
     FetchContent_MakeAvailable(pico_extras)

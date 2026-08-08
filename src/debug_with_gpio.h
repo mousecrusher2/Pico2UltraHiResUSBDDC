@@ -39,9 +39,9 @@ typedef union value2gpio {
 } value2gpio;
 
 extern void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio2, uint8_t gpio3);
-extern inline void gpio_toggle(uint8_t gpio);
-extern inline void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value);
-extern inline void uint16_to_gpio(int16_t in_value);
-extern inline void uint8_to_gpio(uint8_t in_value);
+extern void gpio_toggle(uint8_t gpio);
+extern void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value);
+extern void uint16_to_gpio(int16_t in_value);
+extern void uint8_to_gpio(uint8_t in_value);
 
 #endif

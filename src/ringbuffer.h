@@ -20,7 +20,7 @@ typedef struct RB {
     volatile uint32_t size_buffer;
     volatile uint32_t write_point;
     volatile uint32_t read_point;
-    volatile int32_t size_using;
+    volatile uint32_t size_using;
     int32_t *buffer;
     spin_lock_t *spinlock;
     bool no_spinlock;
