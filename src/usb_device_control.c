@@ -8,6 +8,10 @@
 #include "usb_device_control.h"
 
 #include <arm_math.h>
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "LUFA/Drivers/USB/Class/Common/AudioClassCommon.h"
 #include "common.h"
@@ -36,16 +40,13 @@ static char *descriptor_strings[] = {MFG_NAME, DEVICE_NAME, WEBSITE_ADDR};
 
 #define ENDPOINT_FREQ_CONTROL (1u)
 
-extern uint32_t now_playing;
-extern volatile bool is_high_power_mode;
-
-static void _as_audio_packet(struct usb_endpoint *ep);
+static void as_audio_packet(struct usb_endpoint *ep);
 
 // USB descriptor for HiRes Audio
 struct audio_device_config {
     struct usb_configuration_descriptor descriptor;
     struct usb_interface_descriptor ac_interface;
-    struct __packed {
+    struct __attribute__((packed)) {
         USB_Audio_StdDescriptor_Interface_AC_t core;
         USB_Audio_StdDescriptor_InputTerminal_t input_terminal;
         USB_Audio_StdDescriptor_FeatureUnit_t feature_unit;
@@ -54,14 +55,14 @@ struct audio_device_config {
     struct usb_interface_descriptor as_zero_interface;
 
     struct usb_interface_descriptor as_op_interface;
-    struct __packed {
+    struct __attribute__((packed)) {
         USB_Audio_StdDescriptor_Interface_AS_t streaming;
-        struct __packed {
+        struct __attribute__((packed)) {
             USB_Audio_StdDescriptor_Format_t core;
             USB_Audio_SampleFreq_t freqs[4]; // 44.1/48/88.2/96kHz対応のため配列数を2->4に増やす
         } format;
     } as_audio;
-    struct __packed {
+    struct __attribute__((packed)) {
         struct usb_endpoint_descriptor_long core;
         USB_Audio_StdDescriptor_StreamEndpoint_Spc_t audio;
     } ep1;
@@ -69,14 +70,14 @@ struct audio_device_config {
 
     // Alternate2 : 24bit再生用の定義
     struct usb_interface_descriptor as_op_interface_2;
-    struct __packed {
+    struct __attribute__((packed)) {
         USB_Audio_StdDescriptor_Interface_AS_t streaming;
-        struct __packed {
+        struct __attribute__((packed)) {
             USB_Audio_StdDescriptor_Format_t core;
             USB_Audio_SampleFreq_t freqs[4]; // <- 44.1/48/88.2/96kHz対応のため配列数を4とする
         } format;
     } as_audio_2;
-    struct __packed {
+    struct __attribute__((packed)) {
         struct usb_endpoint_descriptor_long core;
         USB_Audio_StdDescriptor_StreamEndpoint_Spc_t audio;
     } ep1_2;
@@ -304,7 +305,7 @@ static const struct usb_device_descriptor boot_device_descriptor = {
     .bNumConfigurations = 0x01,
 };
 
-const char *_get_descriptor_string(uint index) {
+static const char *get_descriptor_string(uint index) {
     if (index <= count_of(descriptor_strings)) {
         return descriptor_strings[index - 1];
     } else {
@@ -313,9 +314,9 @@ const char *_get_descriptor_string(uint index) {
 }
 
 // バッファ長制限 バッファオーバーラン防止処理
-uint16_t buffer_length_limiter(uint32_t freq, uint16_t length) {
+static uint16_t buffer_length_limiter(uint32_t freq, uint16_t length) {
     int32_t limit_length =
-        get_size_remain(&buffer_upsr_data_Lch_0) / get_ratio_upsampling_core0(freq);
+        (int32_t)(get_size_remain(&buffer_upsr_data_Lch_0) / get_ratio_upsampling_core0(freq));
 
     limit_length = saturation_i32(limit_length, SIZE_EP_BUFFER, 0);
 
@@ -328,7 +329,7 @@ uint16_t buffer_length_limiter(uint32_t freq, uint16_t length) {
 }
 
 // USB EPバッファ取得処理
-uint16_t __not_in_flash_func(usb_ep_data_acquire)(
+static uint16_t __not_in_flash_func(usb_ep_data_acquire)(
     uint bit_depth,
     int16_t *ep,
     uint in_length,
@@ -387,7 +388,7 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(
     return length;
 }
 
-static void _as_sync_packet(struct usb_endpoint *ep) {
+static void as_sync_packet(struct usb_endpoint *ep) {
     assert(ep->current_transfer);
     struct usb_buffer *buffer = usb_current_in_packet_buffer(ep);
     assert(buffer->data_max >= 3);
@@ -395,7 +396,8 @@ static void _as_sync_packet(struct usb_endpoint *ep) {
 
     // Feedbackパラメータ計算 アップサンプリングバッファの使用率でFBをかけている
     float ratio = get_ratio_upsampling_core0(audio_state.freq);
-    float deviation = (SIZE_BUFFER_FB_THRESHOLD - get_size_using(&buffer_upsr_data_Lch_0)) / ratio;
+    float deviation =
+        ((float)SIZE_BUFFER_FB_THRESHOLD - (float)get_size_using(&buffer_upsr_data_Lch_0)) / ratio;
     int32_t adjust_value = saturation_i32((int32_t)deviation, FB_ADJ_LIMIT, -FB_ADJ_LIMIT);
 
     uint32_t feedback_fs = audio_state.freq + adjust_value;
@@ -410,12 +412,12 @@ static void _as_sync_packet(struct usb_endpoint *ep) {
 }
 
 static const struct usb_transfer_type as_transfer_type = {
-    .on_packet = _as_audio_packet,
+    .on_packet = as_audio_packet,
     .initial_packet_count = 1,
 };
 
 static const struct usb_transfer_type as_sync_transfer_type = {
-    .on_packet = _as_sync_packet,
+    .on_packet = as_sync_packet,
     .initial_packet_count = 1,
 };
 
@@ -433,6 +435,8 @@ static bool do_get_current(struct usb_setup_packet *setup) {
                 usb_start_tiny_control_in_transfer(audio_state.acq_volume, 2);
                 return true;
             }
+            default:
+                break;
         }
     } else if (
         (setup->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK) == USB_REQ_TYPE_RECIPIENT_ENDPOINT
@@ -454,6 +458,8 @@ static bool do_get_minimum(struct usb_setup_packet *setup) {
                 usb_start_tiny_control_in_transfer(MIN_VOLUME, 2);
                 return true;
             }
+            default:
+                break;
         }
     }
     return false;
@@ -468,6 +474,8 @@ static bool do_get_maximum(struct usb_setup_packet *setup) {
                 usb_start_tiny_control_in_transfer(MAX_VOLUME, 2);
                 return true;
             }
+            default:
+                break;
         }
     }
     return false;
@@ -482,6 +490,8 @@ static bool do_get_resolution(struct usb_setup_packet *setup) {
                 usb_start_tiny_control_in_transfer(VOLUME_RESOLUTION, 2);
                 return true;
             }
+            default:
+                break;
         }
     }
     return false;
@@ -519,6 +529,8 @@ static void audio_cmd_packet(struct usb_endpoint *ep) {
                     audio_set_volume(*(int16_t *)buffer->data);
                     break;
                 }
+                default:
+                    break;
             }
         } else if (audio_control_cmd_t.type == USB_REQ_TYPE_RECIPIENT_ENDPOINT) {
             if (audio_control_cmd_t.cs == ENDPOINT_FREQ_CONTROL) {
@@ -542,12 +554,13 @@ static void audio_cmd_packet(struct usb_endpoint *ep) {
     // todo is there error handling?
 }
 
-static const struct usb_transfer_type _audio_cmd_transfer_type = {
+static const struct usb_transfer_type audio_cmd_transfer_type = {
     .on_packet = audio_cmd_packet,
     .initial_packet_count = 1,
 };
 
-static bool as_set_alternate(__unused struct usb_interface *interface, uint alt) {
+static bool as_set_alternate(struct usb_interface *interface, uint alt) {
+    (void)interface;
     assert(interface == &as_op_interface);
     switch (alt) {
         case 3:
@@ -581,16 +594,17 @@ static bool do_set_current(struct usb_setup_packet *setup) {
         audio_control_cmd_t.unit = setup->wIndex >> 8u;
         audio_control_cmd_t.cs = setup->wValue >> 8u;
         audio_control_cmd_t.cn = (uint8_t)setup->wValue;
-        usb_start_control_out_transfer(&_audio_cmd_transfer_type);
+        usb_start_control_out_transfer(&audio_cmd_transfer_type);
         return true;
     }
     return false;
 }
 
 static bool ac_setup_request_handler(
-    __unused struct usb_interface *interface,
+    struct usb_interface *interface,
     struct usb_setup_packet *setup
 ) {
+    (void)interface;
     setup = __builtin_assume_aligned(setup, 4);
     if (USB_REQ_TYPE_TYPE_CLASS == (setup->bmRequestType & USB_REQ_TYPE_TYPE_MASK)) {
         switch (setup->bRequest) {
@@ -616,7 +630,8 @@ static bool ac_setup_request_handler(
     return false;
 }
 
-bool _as_setup_request_handler(__unused struct usb_endpoint *ep, struct usb_setup_packet *setup) {
+static bool as_setup_request_handler(struct usb_endpoint *ep, struct usb_setup_packet *setup) {
+    (void)ep;
     setup = __builtin_assume_aligned(setup, 4);
     if (USB_REQ_TYPE_TYPE_CLASS == (setup->bmRequestType & USB_REQ_TYPE_TYPE_MASK)) {
         switch (setup->bRequest) {
@@ -656,7 +671,7 @@ void usb_sound_card_init() {
         true
     );
     as_op_interface.set_alternate_handler = as_set_alternate;
-    ep_op_out.setup_request_handler = _as_setup_request_handler;
+    ep_op_out.setup_request_handler = as_setup_request_handler;
     as_transfer.type = &as_transfer_type;
     usb_set_default_transfer(&ep_op_out, &as_transfer);
     as_sync_transfer.type = &as_sync_transfer_type;
@@ -666,13 +681,14 @@ void usb_sound_card_init() {
         &ac_interface,
         &as_op_interface,
     };
-    __unused struct usb_device *device = usb_device_init(
+    struct usb_device *device = usb_device_init(
         &boot_device_descriptor,
         &audio_device_config.descriptor,
         boot_device_interfaces,
         count_of(boot_device_interfaces),
-        _get_descriptor_string
+        get_descriptor_string
     );
+    (void)device;
     assert(device);
     audio_set_volume(DEFAULT_VOLUME);
     //_audio_reconfigure();
@@ -681,7 +697,7 @@ void usb_sound_card_init() {
 }
 
 // UAC Audio Packet受信時のデータ処理
-static void _as_audio_packet(struct usb_endpoint *ep) {
+static void as_audio_packet(struct usb_endpoint *ep) {
     struct usb_buffer *usb_buffer = usb_current_out_packet_buffer(ep);
     // uint8ポインタをint16にキャスト
     int16_t *ep_in = (int16_t *)usb_buffer->data;

@@ -37,6 +37,16 @@
     "raspberry-pi-pico.cmakePath": "${HOME}/.pico-sdk/cmake/v4.3.4/bin/cmake",
     "raspberry-pi-pico.ninjaPath": "${HOME}/.pico-sdk/ninja/v1.13.2/ninja",
     "raspberry-pi-pico.python3Path": "${HOME}/.pico-sdk/python/3.12.1/python.exe",
+    "C_Cpp.default.intelliSenseMode": "windows-gcc-arm",
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+    "C_Cpp.codeAnalysis.clangTidy.args": [
+        "--extra-arg=-include${workspaceFolder}/cmake/clang-tidy-pico.h"
+    ],
+    "C_Cpp.codeAnalysis.exclude": {
+        "**/src/fft_fir_coef.c": true,
+        "**/src/upsampling_coef.c": true
+    },
     "files.associations": {
         "*.h": "c"
     },

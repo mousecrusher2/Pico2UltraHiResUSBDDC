@@ -5,9 +5,9 @@
  * https://opensource.org/licenses/mit-license.php
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "common.h"
 #include "debug_with_gpio.h"
@@ -37,7 +37,7 @@ volatile bool is_high_power_mode = true;
 #define MILLISEC50 (500000 / TIMER0_US)
 
 // タイマー割り込み
-struct repeating_timer timer0; // デジタルフィルタ演算を割り込みでトリガする
+static struct repeating_timer timer0; // デジタルフィルタ演算を割り込みでトリガする
 
 // ring buffer
 RINGBUFFER buffer_ep_Lch;
@@ -46,7 +46,7 @@ RINGBUFFER buffer_upsr_data_Lch_0;
 RINGBUFFER buffer_upsr_data_Rch_0;
 
 // I2C ring buffer
-I2C_RINGBUFFER i2c_ringbuffer0;
+I2C_RINGBUFFER i2c_ringbuffer0; // NOLINT(misc-use-internal-linkage): used by ess_specific.c.
 
 // Audio State
 AUDIO_STATE audio_state;
@@ -55,15 +55,16 @@ static uint32_t now_playing_old = 0;
 static bool is_cleared_buffer = false;
 
 // 出力開始時間
+// NOLINTNEXTLINE(misc-use-internal-linkage): used by transmit_to_dac.c.
 volatile absolute_time_t time_start_output;
 
-bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t);
+static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t);
 
 // I2C送信インターバル
-volatile absolute_time_t time_start_i2c_transfer = 0;
+static volatile absolute_time_t time_start_i2c_transfer = 0;
 
 // Core1メイン
-extern void core1_main();
+extern void core1_main(void);
 
 // ミュート解除タイミング確認用
 extern bool enable_output;
@@ -77,7 +78,8 @@ void restart_timer0(void) {
 }
 
 // アップサンプリング処理のタイミングをセットする
-bool __not_in_flash_func(core0_timer_callback)(__unused struct repeating_timer *t) {
+static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t) {
+    (void)t;
     // ES9038Q2Mの周波数切り替え時のノイズ対策
     if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute()) {
         if (enable_output) {
@@ -254,7 +256,8 @@ int main(void) {
             static int size_transfer = 0;
 
             if ((!i2c_dma_is_busy())
-                && (elapsed_us >= I2C_ESS_DAC_TRANSFER_INTERVAL_USEC * (size_transfer + 1))) {
+                && (elapsed_us
+                    >= (int64_t)I2C_ESS_DAC_TRANSFER_INTERVAL_USEC * (size_transfer + 1))) {
                 uint16_t size_using = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
                 if (size_using > 0) {
                     I2C_RB_DATA buffer;

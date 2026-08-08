@@ -5,7 +5,8 @@
  * https://opensource.org/licenses/mit-license.php
  */
 
-#include <stdlib.h>
+#include <stdint.h>
+
 #include "pico/stdlib.h"
 
 // BQ-IIR 2x filter0  44.1k/48k to 88.2k/96k

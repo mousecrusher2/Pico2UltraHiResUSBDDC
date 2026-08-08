@@ -3,11 +3,9 @@
 *
 * Released under the MIT license
 * https://opensource.org/licenses/mit-license.php
-*/
+ */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdbool.h>
 
 #include "common.h"
 #include "debug_with_gpio.h"
@@ -23,7 +21,7 @@
 #include "transmit_to_dac.h"
 #include "upsampling.h"
 
-void core1_main() {
+void core1_main(void) { // NOLINT(misc-use-internal-linkage): launched from main.c.
     // I2S初期化
     init_i2s_interface();
 

@@ -5,8 +5,10 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _TRANSMIT_TO_DAC_H_
-#define _TRANSMIT_TO_DAC_H_
+#ifndef PICO2_TRANSMIT_TO_DAC_H
+#define PICO2_TRANSMIT_TO_DAC_H
+
+#include <stdint.h>
 
 #include "common.h"
 #include "pico/stdlib.h"
@@ -35,7 +37,5 @@ extern void init_i2s_interface(void);
 extern void reset_i2s_freq(void);
 extern void __not_in_flash_func(dma_tx_start)(void);
 extern void dma_stop_and_clear(void);
-extern void pwm_i2s_streaming_rate_change(void);
-extern void set_pwm_isr_1(float period_us);
 
-#endif /* _TRANSMIT_TO_DAC_H_ */
+#endif /* PICO2_TRANSMIT_TO_DAC_H */

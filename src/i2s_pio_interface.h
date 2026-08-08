@@ -5,8 +5,8 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _I2S_PIO_INTERFACE_H_
-#define _I2S_PIO_INTERFACE_H_
+#ifndef PICO2_I2S_PIO_INTERFACE_H
+#define PICO2_I2S_PIO_INTERFACE_H
 
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
@@ -41,4 +41,4 @@ extern void I2S_32bit_inv_program_init(
 );
 extern void I2S_freq_init(PIO pio, uint sm, pio_sm_config *sm_config, uint offset);
 
-#endif /* _I2S_PIO_INTERFACE_H_ */
+#endif /* PICO2_I2S_PIO_INTERFACE_H */

@@ -5,8 +5,11 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _DEBUG_WITH_GPIO_H_
-#define _DEBUG_WITH_GPIO_H_
+#ifndef PICO2_DEBUG_WITH_GPIO_H
+#define PICO2_DEBUG_WITH_GPIO_H
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "pico/stdlib.h"
 

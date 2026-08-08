@@ -7,6 +7,12 @@
 
 #include "nonblocking_i2c.h"
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "hardware/dma.h"
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
@@ -18,15 +24,10 @@ static dma_channel_config c_dma;
 static uint32_t i2c_tx_cmd_data[16];
 static uint16_t tx_length = 0;
 
-void dma_i2c_tx_irq_handler(void);
-void i2c_irq_handler(void);
+static void i2c_irq_handler(void);
 
 void i2c_dma_initialize(i2c_inst_t *i2c) {
     dma_ch = dma_claim_unused_channel(true);
-    // dma_channel_set_irq1_enabled(dma_ch, true);                   // DMA TX チャネルで IRQ0 有効化
-    // irq_set_exclusive_handler(DMA_IRQ_1, dma_i2c_tx_irq_handler); // 割り込み関数登録
-    // irq_set_enabled(DMA_IRQ_1, true);                             // NVIC有効化
-    // irq_set_priority(DMA_IRQ_1, 0);                               // 最優先で割り込み
 
     c_dma = dma_channel_get_default_config(dma_ch);
     channel_config_set_transfer_data_size(&c_dma, DMA_SIZE_32);
@@ -108,14 +109,7 @@ void i2c_write_dma(
     i2c->restart_on_next = nostop;
 }
 
-void dma_i2c_tx_irq_handler(void) {
-    // 最後の1バイトを STOP ビット付きで送る
-    // i2c_hw->data_cmd = i2c_tx_cmd_data[tx_length - 1] | I2C_IC_DATA_CMD_STOP_BITS;
-
-    dma_hw->ints1 = 1u << dma_ch; // 割り込みフラグクリア
-}
-
-void i2c_irq_handler(void) {
+static void i2c_irq_handler(void) {
     i2c_hw->clr_stop_det; // STOP割り込みフラグをクリア
     i2c_hw->clr_tx_abrt; // Abort割り込みフラグをクリア
 

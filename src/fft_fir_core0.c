@@ -7,6 +7,9 @@
 
 #include "fft_fir_core0.h"
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "arm_math.h"
@@ -61,9 +64,9 @@ static arm_rfft_fast_instance_f32 *fft_fir_get_rfft(uint16_t fft_len) {
 }
 
 static void __not_in_flash_func(rfft_packed_mul_store)(
-    float *__restrict dst,
-    const float *__restrict x,
-    const float *__restrict h,
+    float *restrict dst,
+    const float *restrict x,
+    const float *restrict h,
     uint32_t fft_len
 ) {
     dst[0] = x[0] * h[0];
@@ -75,10 +78,10 @@ static void __not_in_flash_func(rfft_packed_mul_store)(
 }
 
 static void __not_in_flash_func(rfft_packed_mul_accum)(
-    float *__restrict dst,
-    const float *__restrict x,
-    const float *__restrict h,
-    float *__restrict scratch,
+    float *restrict dst,
+    const float *restrict x,
+    const float *restrict h,
+    float *restrict scratch,
     uint32_t fft_len
 ) {
     dst[0] += x[0] * h[0];

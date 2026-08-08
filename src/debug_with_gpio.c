@@ -7,6 +7,9 @@
 
 #include "debug_with_gpio.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+
 static uint8_t gpio_assignment[4] = {0};
 static volatile uint32_t offtime = 10;
 

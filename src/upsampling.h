@@ -5,12 +5,10 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _UPSAMPLING_H_
-#define _UPSAMPLING_H_
+#ifndef PICO2_UPSAMPLING_H
+#define PICO2_UPSAMPLING_H
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
 #include "pico/stdlib.h"
 
@@ -87,4 +85,4 @@ extern uint32_t __not_in_flash_func(upsampling_process_core1)(
 );
 extern uint32_t upsampling_core1_get_block_len(void);
 
-#endif /* _UPSAMPLING_H_ */
+#endif /* PICO2_UPSAMPLING_H */

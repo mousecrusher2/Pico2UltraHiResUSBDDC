@@ -1,0 +1,38 @@
+---
+# RP2350 deliberately dereferences fixed MMIO addresses. The analyzer still lists
+# FixedAddressDereference as a shared implementation dependency, but this negative
+# check selector disables only that diagnostic while retaining null-dereference analysis.
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  cert-*,
+  concurrency-*,
+  misc-*,
+  performance-*,
+  portability-*,
+  readability-braces-around-statements,
+  readability-duplicate-include,
+  readability-inconsistent-declaration-parameter-name,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-simplify-boolean-expr,
+  -clang-analyzer-core.FixedAddressDereference,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -bugprone-branch-clone,
+  -bugprone-easily-swappable-parameters
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*[\\/]src[\\/].*'
+ExcludeHeaderFilterRegex: '.*([\\/]build[\\/]|[\\/]\.pico-sdk[\\/]).*'
+SystemHeaders: false
+FormatStyle: file
+CheckOptions:
+  bugprone-assert-side-effect.AssertMacros: 'assert,hard_assert'
+  bugprone-narrowing-conversions.WarnOnFloatingPointNarrowingConversion: true
+  # Limit include-cleaner to libc by ignoring project, generated, and SDK headers.
+  misc-include-cleaner.IgnoreHeaders: '.*[\\/](src|build)[\\/].*;.*[\\/](pico|hardware|boards|usb)[\\/].*;.*[\\/](CMSIS|LUFA)[\\/].*'
+  misc-include-cleaner.MissingIncludes: true
+  misc-include-cleaner.UnusedIncludes: true
+  readability-braces-around-statements.ShortStatementLines: 0
+...

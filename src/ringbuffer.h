@@ -5,12 +5,11 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _RINGBUFFER_H_
-#define _RINGBUFFER_H_
+#ifndef PICO2_RINGBUFFER_H
+#define PICO2_RINGBUFFER_H
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "hardware/sync.h"
 #include "pico/multicore.h"

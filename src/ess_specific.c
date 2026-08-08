@@ -7,21 +7,24 @@
 
 #include "ess_specific.h"
 
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "common.h"
 #include "hardware/i2c.h"
 #include "nonblocking_i2c.h"
-#include "stdbool.h"
 
 static bool is_ess_dac_mute = false;
 extern I2C_RINGBUFFER i2c_ringbuffer0;
 
 void ess_dac_i2c_setup(void) {
     uint8_t i2cbuf[2] = {0, 0};
-    uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
-    uint16_t ratio_core1 = get_ratio_upsampling_core1();
-    uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
 
     if (KIND_ESS_DAC == ES9010K2M) {
+        uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
+        uint16_t ratio_core1 = get_ratio_upsampling_core1();
+        uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
         if (output_fs > 300000) {
             // 内蔵アップサンプリングを使用しない
             i2cbuf[0] = 0x15; // Resister 21
@@ -102,6 +105,10 @@ void ess_dac_i2c_setup(void) {
     }
 
     else if (KIND_ESS_DAC == ES9039Q2M) {
+        uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
+        uint16_t ratio_core1 = get_ratio_upsampling_core1();
+        uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
+
         // CLK GEAR SELECT
         i2cbuf[0] = 0x05; // Resister 5: CLK GEAR SELECT
         i2cbuf[1] = 0x00; // SYS_CLK=MCLK, AUTO_CLK_GEAR disabled
@@ -184,6 +191,10 @@ void ess_dac_i2c_setup(void) {
         i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
         sleep_ms(1);
     } else if (KIND_ESS_DAC == ES9039PRO) {
+        uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
+        uint16_t ratio_core1 = get_ratio_upsampling_core1();
+        uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
+
         // 768kHz入力を有効化し、DACを有効化する
         i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
         i2cbuf[1] = 0x42; // Enable 64fs mode, enable DAC
@@ -485,7 +496,7 @@ void ess_dac_volume(void) {
         I2C_RB_DATA i2c_rb_buf;
 
         if (KIND_ESS_DAC == ES9038Q2M) {
-            float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0, 0.0, -256.0);
+            float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0f, 0.0f, -256.0f);
             i2cbuf[0] = 0x0F; // Resister #15 volume1
             i2cbuf[1] = (uint8_t)vol_dB_2;
             i2cbuf[2] = (uint8_t)vol_dB_2;
@@ -520,7 +531,7 @@ void ess_dac_volume(void) {
                 i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
             }
         } else if (KIND_ESS_DAC == ES9039Q2M) {
-            float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0, 0.0, -256.0);
+            float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0f, 0.0f, -256.0f);
             i2cbuf[0] = 0x4A; // Resister #74 volume ch1
             i2cbuf[1] = (uint8_t)vol_dB_2;
             i2cbuf[2] = (uint8_t)vol_dB_2;
@@ -575,7 +586,7 @@ void ess_dac_volume(void) {
                 i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
             }
         } else if (KIND_ESS_DAC == ES9039PRO) {
-            float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0, 0.0, -256.0);
+            float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0f, 0.0f, -256.0f);
             i2cbuf[0] = 0x4A; // Resister #74 volume ch1
             i2cbuf[1] = (uint8_t)vol_dB_2;
             i2cbuf[2] = (uint8_t)vol_dB_2;

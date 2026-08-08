@@ -7,14 +7,15 @@
 
 #include "transmit_to_dac.h"
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "hardware/dma.h"
-#include "hardware/pwm.h"
 #include "i2s_pio_interface.h"
 #include "upsampling.h"
 
-static const PIO pio = pio0;
+static pio_hw_t *const pio = pio0;
 static const uint sm = 0;
 static pio_sm_config sm_config;
 static uint offset;
@@ -30,23 +31,14 @@ typedef enum {
 static volatile int dma_ch[DMA_TX_CHAIN_CHANNELS];
 static dma_channel_config c_dma[DMA_TX_CHAIN_CHANNELS];
 static volatile uint8_t dma_ch_state[DMA_TX_CHAIN_CHANNELS];
-DMA_TX_STRUCTURE dma_tx;
+static DMA_TX_STRUCTURE dma_tx;
 
-bool enable_output = false;
-
-// PWM
-static uint16_t pwm_slice;
+bool enable_output = false; // NOLINT(misc-use-internal-linkage): read by main.c.
 
 void __not_in_flash_func(dma_tx_start)(void);
 static inline uint32_t dma_tx_active_count(void);
 static inline bool dma_tx_any_running(void);
 static void __not_in_flash_func(dma_tx_chain_service)(void);
-
-bool calc_pwm_clkdiv_and_wrap_us(float target_period_us, uint16_t *wrap_out, float *clkdiv_out);
-void set_pwm_isr_1(float period_us);
-void set_period_pwm_us(float period_us);
-void pwm_i2s_streaming_rate_change(void);
-void __not_in_flash_func(pwm_wrap_handler)(void);
 
 static inline uint32_t dma_tx_active_count(void) {
     uint32_t count = 0;
@@ -198,11 +190,6 @@ void init_i2s_interface(void) {
     dma_channel_configure(dma_ch[1], &c_dma[1], &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
 }
 
-// I2S送信タイミング通知を行う
-void __not_in_flash_func(pwm_wrap_handler)(void) {
-    pwm_clear_irq(pwm_slice); // PWM割り込みフラグをクリア
-}
-
 // アップサンプリングに使用するメモリを静的確保
 static float from_core0_Lch[SIZE_DMA_TX_BUF / CORE1_UP_RATIO_MAX / 2];
 static float from_core0_Rch[SIZE_DMA_TX_BUF / CORE1_UP_RATIO_MAX / 2];
@@ -216,7 +203,7 @@ static volatile bool enable_output_prev = false;
 extern volatile absolute_time_t time_start_output;
 
 void __not_in_flash_func(dma_tx_start)(void) {
-    int32_t length = get_size_using(&buffer_upsr_data_Lch_0);
+    int32_t length = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
 
     // バッファに規定量以上のデータが溜まってから出力開始
     if (length > SIZE_BUFFER_FB_THRESHOLD) {
@@ -245,8 +232,8 @@ void __not_in_flash_func(dma_tx_start)(void) {
             uint32_t core1_block_len = upsampling_core1_get_block_len();
             int32_t max_in_len = (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
             int32_t transmit_ref_size =
-                (int32_t)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq) / 1000.0f
-                    * (CORE1_PROCESS_US / 1000.0f));
+                (int32_t)((float)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq))
+                    / 1000.0f * (CORE1_PROCESS_US / 1000.0f));
             if (transmit_ref_size > max_in_len) {
                 transmit_ref_size = max_in_len;
             }
@@ -255,8 +242,8 @@ void __not_in_flash_func(dma_tx_start)(void) {
             }
 
             while (dma_tx.using < SIZE_DMA_TX_BUF_STACK) {
-                int32_t avail_len_L = get_size_using(&buffer_upsr_data_Lch_0);
-                int32_t avail_len_R = get_size_using(&buffer_upsr_data_Rch_0);
+                int32_t avail_len_L = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
+                int32_t avail_len_R = (int32_t)get_size_using(&buffer_upsr_data_Rch_0);
                 int32_t avail_len = (avail_len_L < avail_len_R) ? avail_len_L : avail_len_R;
                 if (avail_len <= 0) {
                     break;

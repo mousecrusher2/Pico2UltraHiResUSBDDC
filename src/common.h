@@ -5,12 +5,11 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _COMMON_H_
-#define _COMMON_H_
+#ifndef PICO2_COMMON_H
+#define PICO2_COMMON_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "ess_specific.h"
 #include "pico/stdlib.h"
@@ -61,7 +60,7 @@
 // Core1 ratio is applied directly (1/2/4 are supported).
 #define CORE1_UP_RATIO_HP (1)
 #define CORE1_UP_RATIO_LP (1)
-#define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
+#define DEFAULT_GAIN_RATIO (0.75f) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
@@ -136,7 +135,7 @@
 #define DEPTH_DMA_TX_BUFFER (3)
 
 // FB水位(50%が望ましい)
-#define SIZE_BUFFER_FB_THRESHOLD (SIZE_UPSAMPLE_CORE0 / 2)
+#define SIZE_BUFFER_FB_THRESHOLD (SIZE_UPSAMPLE_CORE0 >> 1u)
 
 // Feedback(±1サンプルになる値を返す 基準は1000)
 #define FB_ADJ_LIMIT (1000)

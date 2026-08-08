@@ -8,14 +8,17 @@
 #include "upsampling.h"
 
 #include <arm_math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "debug_with_gpio.h"
 #include "fft_fir_core0.h"
 #include "fft_fir_core1.h"
 #include "ringbuffer.h"
-
-extern volatile bool is_high_power_mode;
 
 // 双二次フィルタ構造体
 static arm_biquad_casd_df1_inst_f32 biquad_filter3L;
@@ -305,7 +308,7 @@ static float fft_output_L[FFT_FIR_MAX_OUTPUT];
 static float fft_output_R[FFT_FIR_MAX_OUTPUT];
 
 void __not_in_flash_func(upsampling_process_core0)(void) {
-    int32_t size_buf = get_size_using(&buffer_ep_Lch);
+    int32_t size_buf = (int32_t)get_size_using(&buffer_ep_Lch);
     uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
     uint32_t save;
     bool is_44k1_family =

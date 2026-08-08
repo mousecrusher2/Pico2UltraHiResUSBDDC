@@ -7,6 +7,8 @@
 
 #include "i2s_pio_interface.h"
 
+#include <stdbool.h>
+
 #include "common.h"
 
 // PIO
@@ -41,7 +43,7 @@ void I2S_16bit_program_init(
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
     float div = (float)clock_get_hz(clk_sys)
-        / ((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
+        / (float)((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -78,7 +80,7 @@ void I2S_32bit_program_init(
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
     float div = (float)clock_get_hz(clk_sys)
-        / ((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
+        / (float)((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -115,7 +117,7 @@ void I2S_32bit_inv_program_init(
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
     float div = (float)clock_get_hz(clk_sys)
-        / ((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
+        / (float)((freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1()) << 7u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);

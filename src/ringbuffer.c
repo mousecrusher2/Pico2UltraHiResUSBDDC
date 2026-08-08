@@ -7,6 +7,11 @@
 
 #include "ringbuffer.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 extern int16_t initialize_ringbuffer(uint32_t size, bool no_spinlock, RINGBUFFER *ringbuffer) {
     ringbuffer->no_spinlock = no_spinlock;
     if (!no_spinlock) {

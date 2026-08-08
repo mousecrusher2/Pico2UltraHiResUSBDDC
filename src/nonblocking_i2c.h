@@ -5,8 +5,12 @@
  * https://opensource.org/licenses/mit-license.php
  */
 
-#ifndef _NONBLOCKING_I2C_H_
-#define _NONBLOCKING_I2C_H_
+#ifndef PICO2_NONBLOCKING_I2C_H
+#define PICO2_NONBLOCKING_I2C_H
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "common.h"
 #include "hardware/i2c.h"

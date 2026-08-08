@@ -5,9 +5,10 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _FFT_FIR_CORE0_H_
-#define _FFT_FIR_CORE0_H_
+#ifndef PICO2_FFT_FIR_CORE0_H
+#define PICO2_FFT_FIR_CORE0_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "fft_fir_coef.h"
@@ -36,4 +37,4 @@ extern uint32_t __not_in_flash_func(fft_fir_core0_process_block_stage)(
     uint8_t stage
 );
 
-#endif /* _FFT_FIR_CORE0_H_ */
+#endif /* PICO2_FFT_FIR_CORE0_H */

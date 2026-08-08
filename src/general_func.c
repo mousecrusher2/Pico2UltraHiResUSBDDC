@@ -6,6 +6,7 @@
  */
 
 #include <math.h>
+#include <stdbool.h>
 
 #include "common.h"
 #include "hardware/clocks.h"
@@ -14,7 +15,7 @@
 #include "nonblocking_i2c.h"
 #include "transmit_to_dac.h"
 
-void renew_cpu_clock(bool is_high_power) {
+static void renew_cpu_clock(bool is_high_power) {
     // CPUクロックを再設定
     switch (audio_state.freq) {
         case 192000:
@@ -86,7 +87,7 @@ void setup_I2C(void) {
 void volume_control(void) {
     if (!audio_state.mute) {
         if (ENABLE_ESS_DAC_VOLUME) {
-            audio_state.vol_float = 1.0;
+            audio_state.vol_float = 1.0f;
             ess_dac_volume();
         } else {
             audio_state.vol_float = saturation_f32(
@@ -96,6 +97,6 @@ void volume_control(void) {
             );
         }
     } else {
-        audio_state.vol_float = 0.;
+        audio_state.vol_float = 0.0f;
     }
 }

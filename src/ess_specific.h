@@ -5,10 +5,10 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#ifndef _ESS_SPECIFIC_H_
-#define _ESS_SPECIFIC_H_
+#ifndef PICO2_ESS_SPECIFIC_H
+#define PICO2_ESS_SPECIFIC_H
 
-#include "stdbool.h"
+#include <stdbool.h>
 
 // ESS DAC Kind
 #define ESS_DAC_NONE 0
