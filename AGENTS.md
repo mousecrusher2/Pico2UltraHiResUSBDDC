@@ -19,7 +19,7 @@ Non-goals (for this repo):
 
 ### 2.1 Build (CLI)
 
-This project uses Pico SDK + CMake. The repository includes `CMSIS/` and `lufa/` sources. Pico Extras is fetched by CMake at a pinned revision because the firmware uses its minimal USB device stack.
+This project uses Pico SDK + CMake. CMSIS-DSP, LUFA, and Pico Extras are fetched by CMake at pinned revisions. CMSIS-Core headers come from the Pico SDK.
 
 Linux/macOS example:
 
@@ -63,8 +63,8 @@ Notes:
 
 Top-level:
 - `src/` : firmware sources (Core0/Core1, USB, upsampling, I2S/PIO/DMA)
-- `CMSIS/` : CMSIS-Core and CMSIS-DSP (vendored)
-- `lufa/` : LUFA headers used for USB Audio class descriptor structures
+- `cmake/patches/` : small compatibility patches applied to fetched dependencies
+- `LICENSES/` : licenses for fetched third-party dependencies
 - `make_digitalFilter/` : Python scripts to design filter coefficients
 
 Important `src/` files:
@@ -135,7 +135,7 @@ When changing pinouts, ensure the PCB wiring matches and that no pin conflicts e
 ## 6. USB audio implementation notes
 
 - USB stack: Pico SDK `pico/usb_device`.
-- USB Audio class descriptor types/structs: `lufa/AudioClassCommon.h`.
+- USB Audio class descriptor types/structs: fetched LUFA `AudioClassCommon.h` (patched for standalone use on RP2350).
 - Audio streaming endpoints are defined in `src/usb_device_control.c`.
 
 Important invariants:

@@ -65,7 +65,7 @@ USB経由で入力された2ch PCMオーディオ信号に対し、高品質な�
   - Core0:FIRよる 8x 拡張
   - Core1:FIRによる 2x 拡張, またはBiQuad-IIR による 4x 拡張
 - **USB制御**  
-  - LUFAベースの USB Audio Class 実装
+  - Pico ExtrasのUSB device stackを使用し、UAC1 descriptor型のみLUFAから利用
 - **タイミング制御**  
   - timer 割り込み + バッファレートに応じたフィードバック制御
 

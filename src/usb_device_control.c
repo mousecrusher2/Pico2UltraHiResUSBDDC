@@ -7,7 +7,7 @@
 
 #include "usb_device_control.h"
 #include "pico/usb_device.h"
-#include "lufa/AudioClassCommon.h"
+#include "LUFA/Drivers/USB/Class/Common/AudioClassCommon.h"
 #include <arm_math.h>
 #include "common.h"
 #include "upsampling.h"

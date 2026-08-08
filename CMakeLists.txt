@@ -36,9 +36,48 @@ include(example_auto_set_url.cmake)
 
 project(Pico2UltraHiResUSBDDC C CXX ASM)
 
-# The firmware still uses pico-extras' minimal USB device stack. Keep it out of
-# the source tree and pin the revision matching the previously vendored snapshot.
+# Keep third-party source trees out of the repository and pin the revisions that
+# match the snapshots previously kept in-tree.
 include(FetchContent)
+
+FetchContent_Declare(
+    cmsis_dsp
+    GIT_REPOSITORY https://github.com/ARM-software/CMSIS-DSP.git
+    GIT_TAG 17440e5ee9a7e6f22167fa618ba3c5d443fe70b7
+)
+
+# CMSIS-DSP's own CMake project builds the whole library. This firmware selects
+# only the kernels it uses, so populate the sources without adding that project.
+FetchContent_GetProperties(cmsis_dsp)
+if(NOT cmsis_dsp_POPULATED)
+    if(POLICY CMP0169)
+        cmake_policy(PUSH)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
+    FetchContent_Populate(cmsis_dsp)
+    if(POLICY CMP0169)
+        cmake_policy(POP)
+    endif()
+endif()
+
+# LUFA normally exposes these definitions through its AVR USB stack. The patch
+# keeps only the descriptor headers standalone, matching the previous snapshot.
+FetchContent_Declare(
+    lufa
+    GIT_REPOSITORY https://github.com/abcminiuser/lufa.git
+    GIT_TAG 550745aa15d9d764319580d2a4259b1762d3f1a3
+    PATCH_COMMAND git apply --whitespace=nowarn
+        ${CMAKE_CURRENT_LIST_DIR}/cmake/patches/lufa-standalone-descriptors.patch
+)
+if(COMMAND FetchContent_MakeAvailable)
+    FetchContent_MakeAvailable(lufa)
+else()
+    FetchContent_GetProperties(lufa)
+    if(NOT lufa_POPULATED)
+        FetchContent_Populate(lufa)
+    endif()
+endif()
+
 FetchContent_Declare(
     pico_extras
     GIT_REPOSITORY https://github.com/raspberrypi/pico-extras.git
