@@ -5,8 +5,10 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
-#include <string.h>
 #include "transmit_to_dac.h"
+
+#include <string.h>
+
 #include "hardware/dma.h"
 #include "hardware/pwm.h"
 #include "i2s_pio_interface.h"
@@ -19,8 +21,7 @@ static uint offset;
 
 #define DMA_TX_CHAIN_CHANNELS (2)
 
-typedef enum
-{
+typedef enum {
     DMA_CH_STATE_IDLE = 0,
     DMA_CH_STATE_ARMED,
     DMA_CH_STATE_RUNNING
@@ -47,128 +48,128 @@ void set_period_pwm_us(float period_us);
 void pwm_i2s_streaming_rate_change(void);
 void __not_in_flash_func(pwm_wrap_handler)(void);
 
-static inline uint32_t dma_tx_active_count(void)
-{
+static inline uint32_t dma_tx_active_count(void) {
     uint32_t count = 0;
-    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
-    {
-        if (dma_ch_state[i] != DMA_CH_STATE_IDLE)
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
+        if (dma_ch_state[i] != DMA_CH_STATE_IDLE) {
             count++;
+        }
     }
     return count;
 }
 
-static inline bool dma_tx_any_running(void)
-{
-    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
-    {
-        if (dma_ch_state[i] == DMA_CH_STATE_RUNNING)
+static inline bool dma_tx_any_running(void) {
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
+        if (dma_ch_state[i] == DMA_CH_STATE_RUNNING) {
             return true;
+        }
     }
     return false;
 }
 
-static void __not_in_flash_func(dma_tx_chain_service)(void)
-{
-    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
-    {
+static void __not_in_flash_func(dma_tx_chain_service)(void) {
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
         bool busy = dma_channel_is_busy(dma_ch[i]);
-        if (dma_ch_state[i] == DMA_CH_STATE_ARMED)
-        {
-            if (busy)
+        if (dma_ch_state[i] == DMA_CH_STATE_ARMED) {
+            if (busy) {
                 dma_ch_state[i] = DMA_CH_STATE_RUNNING;
-        }
-        else if (dma_ch_state[i] == DMA_CH_STATE_RUNNING)
-        {
-            if (!busy)
-            {
+            }
+        } else if (dma_ch_state[i] == DMA_CH_STATE_RUNNING) {
+            if (!busy) {
                 dma_ch_state[i] = DMA_CH_STATE_IDLE;
-                if (dma_tx.using > 0)
-                    dma_tx.using--;
+                if (dma_tx.using > 0) {
+                    dma_tx.using --;
+                }
             }
         }
     }
 
     uint32_t active = dma_tx_active_count();
     int32_t unassigned = (int32_t)dma_tx.using - (int32_t)active;
-    if (unassigned < 0)
+    if (unassigned < 0) {
         unassigned = 0;
+    }
 
-    while (unassigned > 0)
-    {
+    while (unassigned > 0) {
         int idle_idx = -1;
-        for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
-        {
-            if (dma_ch_state[i] == DMA_CH_STATE_IDLE)
-            {
+        for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
+            if (dma_ch_state[i] == DMA_CH_STATE_IDLE) {
                 idle_idx = i;
                 break;
             }
         }
-        if (idle_idx < 0)
+        if (idle_idx < 0) {
             break;
+        }
 
         uint32_t rp = dma_tx.rp;
         dma_channel_set_read_addr(dma_ch[idle_idx], dma_tx.data[rp].tx_buf, false);
         dma_channel_set_trans_count(dma_ch[idle_idx], dma_tx.data[rp].tx_size, false);
         dma_tx.rp++;
-        if (dma_tx.rp >= DEPTH_DMA_TX_BUFFER)
+        if (dma_tx.rp >= DEPTH_DMA_TX_BUFFER) {
             dma_tx.rp = 0;
+        }
         dma_ch_state[idle_idx] = DMA_CH_STATE_ARMED;
         active++;
         unassigned--;
     }
 
-    if (!dma_tx_any_running())
-    {
+    if (!dma_tx_any_running()) {
         int armed_count = 0;
         int start_idx = -1;
-        for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
-        {
-            if (dma_ch_state[i] == DMA_CH_STATE_ARMED)
-            {
+        for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
+            if (dma_ch_state[i] == DMA_CH_STATE_ARMED) {
                 armed_count++;
-                if (start_idx < 0)
+                if (start_idx < 0) {
                     start_idx = i;
+                }
             }
         }
-        if (armed_count >= 2 && start_idx >= 0)
-        {
+        if (armed_count >= 2 && start_idx >= 0) {
             dma_channel_start(dma_ch[start_idx]);
             dma_ch_state[start_idx] = DMA_CH_STATE_RUNNING;
         }
     }
 }
 
-void reset_i2s_freq(void)
-{
+void reset_i2s_freq(void) {
     I2S_freq_init(pio, sm, &sm_config, offset);
 }
 
-void init_i2s_interface(void)
-{
-    if(I2S_SLEWRATE_FAST_ENABLE)
-    {
+void init_i2s_interface(void) {
+    if (I2S_SLEWRATE_FAST_ENABLE) {
         gpio_set_slew_rate(I2S_DATA_PIN, GPIO_SLEW_RATE_FAST);
         gpio_set_slew_rate(I2S_SIDESET_BASE, GPIO_SLEW_RATE_FAST);
         gpio_set_slew_rate(I2S_SIDESET_BASE + 1, GPIO_SLEW_RATE_FAST);
     }
 
-    if(I2S_STRENGTH_REINFORCE_ENABLE)
-    {
+    if (I2S_STRENGTH_REINFORCE_ENABLE) {
         gpio_set_drive_strength(I2S_DATA_PIN, GPIO_DRIVE_STRENGTH_12MA);
         gpio_set_drive_strength(I2S_SIDESET_BASE, GPIO_DRIVE_STRENGTH_12MA);
         gpio_set_drive_strength(I2S_SIDESET_BASE + 1, GPIO_DRIVE_STRENGTH_12MA);
     }
 
     // PIO I2Sの初期化
-    if(I2S_SIDESET_CHANGE)
-    {
-        I2S_32bit_inv_program_init(pio, sm, I2S_DATA_PIN, I2S_SIDESET_BASE, AUDIO_INITIAL_FREQ, &sm_config, &offset);
-    }
-    else
-    {
-        I2S_32bit_program_init(pio, sm, I2S_DATA_PIN, I2S_SIDESET_BASE, AUDIO_INITIAL_FREQ, &sm_config, &offset);
+    if (I2S_SIDESET_CHANGE) {
+        I2S_32bit_inv_program_init(
+            pio,
+            sm,
+            I2S_DATA_PIN,
+            I2S_SIDESET_BASE,
+            AUDIO_INITIAL_FREQ,
+            &sm_config,
+            &offset
+        );
+    } else {
+        I2S_32bit_program_init(
+            pio,
+            sm,
+            I2S_DATA_PIN,
+            I2S_SIDESET_BASE,
+            AUDIO_INITIAL_FREQ,
+            &sm_config,
+            &offset
+        );
     }
 
     reset_i2s_freq();
@@ -193,15 +194,12 @@ void init_i2s_interface(void)
     dma_channel_set_irq0_enabled(dma_ch[0], false);
     dma_channel_set_irq0_enabled(dma_ch[1], false);
 
-    dma_channel_configure(dma_ch[0], &c_dma[0],
-                          &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
-    dma_channel_configure(dma_ch[1], &c_dma[1],
-                          &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
+    dma_channel_configure(dma_ch[0], &c_dma[0], &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
+    dma_channel_configure(dma_ch[1], &c_dma[1], &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
 }
 
 // I2S送信タイミング通知を行う
-void __not_in_flash_func(pwm_wrap_handler)(void)
-{
+void __not_in_flash_func(pwm_wrap_handler)(void) {
     pwm_clear_irq(pwm_slice); // PWM割り込みフラグをクリア
 }
 
@@ -213,26 +211,25 @@ static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 
 // 転送用バッファを静的確保
 
-
 // 出力状態バッファ
 static volatile bool enable_output_prev = false;
 extern volatile absolute_time_t time_start_output;
 
-void __not_in_flash_func(dma_tx_start)(void)
-{
+void __not_in_flash_func(dma_tx_start)(void) {
     int32_t length = get_size_using(&buffer_upsr_data_Lch_0);
 
     // バッファに規定量以上のデータが溜まってから出力開始
-    if (length > SIZE_BUFFER_FB_THRESHOLD)
+    if (length > SIZE_BUFFER_FB_THRESHOLD) {
         enable_output = true;
+    }
 
     // 入ってくるデータが枯渇したうえで、DMA送信バッファ内のすべてのデータを送信完了したら出力停止
-    else if ((length <= 0) && (dma_tx.using == 0))
+    else if ((length <= 0) && (dma_tx.using == 0)) {
         enable_output = false;
+    }
 
     // 出力開始した時間を取得
-    if(enable_output == true && enable_output_prev == false)
-    {
+    if (enable_output == true && enable_output_prev == false) {
         time_start_output = get_absolute_time();
         // Resync I2S frame phase on playback start to prevent L/R swap.
         pio_sm_set_enabled(pio, sm, false);
@@ -242,50 +239,70 @@ void __not_in_flash_func(dma_tx_start)(void)
     }
     enable_output_prev = enable_output;
 
-    if (enable_output)
-    {
+    if (enable_output) {
         // 入ってくるデータが枯渇した、またはDMA送信バッファに規定量以上データが蓄積されているときはデータ送信処理をしない
-        if ((length > 0) && (dma_tx.using < SIZE_DMA_TX_BUF_STACK))
-        {
+        if ((length > 0) && (dma_tx.using < SIZE_DMA_TX_BUF_STACK)) {
             uint32_t core1_block_len = upsampling_core1_get_block_len();
             int32_t max_in_len = (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
-            int32_t transmit_ref_size = (int32_t)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq) / 1000.0f * (CORE1_PROCESS_US / 1000.0f));
-            if (transmit_ref_size > max_in_len)
+            int32_t transmit_ref_size =
+                (int32_t)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq) / 1000.0f
+                    * (CORE1_PROCESS_US / 1000.0f));
+            if (transmit_ref_size > max_in_len) {
                 transmit_ref_size = max_in_len;
-            if (core1_block_len > 0 && transmit_ref_size < (int32_t)core1_block_len)
+            }
+            if (core1_block_len > 0 && transmit_ref_size < (int32_t)core1_block_len) {
                 transmit_ref_size = (int32_t)core1_block_len;
-        
-                        while (dma_tx.using < SIZE_DMA_TX_BUF_STACK)
-            {
+            }
+
+            while (dma_tx.using < SIZE_DMA_TX_BUF_STACK) {
                 int32_t avail_len_L = get_size_using(&buffer_upsr_data_Lch_0);
                 int32_t avail_len_R = get_size_using(&buffer_upsr_data_Rch_0);
                 int32_t avail_len = (avail_len_L < avail_len_R) ? avail_len_L : avail_len_R;
-                if (avail_len <= 0)
+                if (avail_len <= 0) {
                     break;
-
-                int32_t chunk_len = saturation_i32(avail_len, transmit_ref_size, 0);
-                if (core1_block_len > 0)
-                {
-                    chunk_len = (chunk_len / (int32_t)core1_block_len) * (int32_t)core1_block_len;
-                    if (chunk_len <= 0)
-                        break;
                 }
 
-                if (ringbuf_read_array_spinlock((int32_t*)from_core0_Lch, chunk_len, &buffer_upsr_data_Lch_0) < 0)
+                int32_t chunk_len = saturation_i32(avail_len, transmit_ref_size, 0);
+                if (core1_block_len > 0) {
+                    chunk_len = (chunk_len / (int32_t)core1_block_len) * (int32_t)core1_block_len;
+                    if (chunk_len <= 0) {
+                        break;
+                    }
+                }
+
+                if (ringbuf_read_array_spinlock(
+                        (int32_t *)from_core0_Lch,
+                        chunk_len,
+                        &buffer_upsr_data_Lch_0
+                    )
+                    < 0) {
                     break;
-                if (ringbuf_read_array_spinlock((int32_t*)from_core0_Rch, chunk_len, &buffer_upsr_data_Rch_0) < 0)
+                }
+                if (ringbuf_read_array_spinlock(
+                        (int32_t *)from_core0_Rch,
+                        chunk_len,
+                        &buffer_upsr_data_Rch_0
+                    )
+                    < 0) {
                     break;
+                }
 
                 // Core1?????????????????????????????????250us????????????????)
-                int32_t out_len = (int32_t)upsampling_process_core1(from_core0_Lch, from_core0_Rch, upsr_core1_Lch, upsr_core1_Rch, (uint32_t)chunk_len);
-                if (out_len <= 0)
+                int32_t out_len = (int32_t)upsampling_process_core1(
+                    from_core0_Lch,
+                    from_core0_Rch,
+                    upsr_core1_Lch,
+                    upsr_core1_Rch,
+                    (uint32_t)chunk_len
+                );
+                if (out_len <= 0) {
                     break;
+                }
 
                 uint32_t wp = dma_tx.wp;
                 int32_t *tx_buf = (int32_t *)dma_tx.data[wp].tx_buf;
                 int count = 0;
-                for (int32_t i = 0; i < out_len; i++)
-                {
+                for (int32_t i = 0; i < out_len; i++) {
                     tx_buf[count++] = (int32_t)upsr_core1_Lch[i];
                     tx_buf[count++] = (int32_t)upsr_core1_Rch[i];
                 }
@@ -293,28 +310,26 @@ void __not_in_flash_func(dma_tx_start)(void)
                 uint32_t save = save_and_disable_interrupts();
                 dma_tx.data[wp].tx_size = count;
                 dma_tx.wp++;
-                if (dma_tx.wp >= DEPTH_DMA_TX_BUFFER)
+                if (dma_tx.wp >= DEPTH_DMA_TX_BUFFER) {
                     dma_tx.wp = 0;
+                }
                 dma_tx.using ++;
                 restore_interrupts(save);
             }
-        
-            // ???????????DMA?????????2????????DMA?????????????????
 
+            // ???????????DMA?????????2????????DMA?????????????????
         }
         dma_tx_chain_service();
-    }
-    else
-    {
+    } else {
         dma_stop_and_clear();
     }
 }
 
-void dma_stop_and_clear(void)
-{
+void dma_stop_and_clear(void) {
     // DMAを強制停止
-    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
         dma_channel_abort(dma_ch[i]);
+    }
 
     // DMAステータスをリセット
     dma_hw->ints0 = (1u << dma_ch[0]) | (1u << dma_ch[1]);

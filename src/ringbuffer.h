@@ -11,12 +11,12 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pico/stdlib.h"
-#include "pico/multicore.h"
-#include "hardware/sync.h"
 
-typedef struct RB
-{
+#include "hardware/sync.h"
+#include "pico/multicore.h"
+#include "pico/stdlib.h"
+
+typedef struct RB {
     volatile uint32_t size_buffer;
     volatile uint32_t write_point;
     volatile uint32_t read_point;
@@ -35,11 +35,33 @@ extern uint32_t __not_in_flash_func(get_read_point)(RINGBUFFER *ringbuffer);
 extern uint32_t __not_in_flash_func(get_write_point)(RINGBUFFER *ringbuffer);
 extern int16_t __not_in_flash_func(ringbuf_read_spinlock)(int32_t *output, RINGBUFFER *ringbuffer);
 extern int16_t __not_in_flash_func(ringbuf_write_spinlock)(int32_t input, RINGBUFFER *ringbuffer);
-extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(int32_t *output, uint32_t size, RINGBUFFER *ringbuffer);
-extern int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(int32_t *input, uint32_t size, RINGBUFFER *ringbuffer);
+extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
+    int32_t *output,
+    uint32_t size,
+    RINGBUFFER *ringbuffer
+);
+extern int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(
+    int32_t *input,
+    uint32_t size,
+    RINGBUFFER *ringbuffer
+);
 
-extern int16_t __not_in_flash_func(ringbuf_read_no_spinlock)(int32_t *output, RINGBUFFER *ringbuffer);
-extern int16_t __not_in_flash_func(ringbuf_write_no_spinlock)(int32_t input, RINGBUFFER *ringbuffer);
-extern int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(int32_t *output, uint32_t size, RINGBUFFER *ringbuffer);
-extern int64_t __not_in_flash_func(ringbuf_write_array_no_spinlock)(int32_t *input, uint32_t size, RINGBUFFER *ringbuffer);
+extern int16_t __not_in_flash_func(ringbuf_read_no_spinlock)(
+    int32_t *output,
+    RINGBUFFER *ringbuffer
+);
+extern int16_t __not_in_flash_func(ringbuf_write_no_spinlock)(
+    int32_t input,
+    RINGBUFFER *ringbuffer
+);
+extern int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(
+    int32_t *output,
+    uint32_t size,
+    RINGBUFFER *ringbuffer
+);
+extern int64_t __not_in_flash_func(ringbuf_write_array_no_spinlock)(
+    int32_t *input,
+    uint32_t size,
+    RINGBUFFER *ringbuffer
+);
 #endif

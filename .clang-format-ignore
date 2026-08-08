@@ -1,0 +1,3 @@
+# Generated coefficient tables; format the generator output instead.
+src/fft_fir_coef.c
+src/upsampling_coef.c

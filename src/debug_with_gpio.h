@@ -15,12 +15,10 @@
 #define GPIO_FOR_DEBUG_2 (4)
 #define GPIO_FOR_DEBUG_3 (5)
 
-typedef union value2gpio
-{
+typedef union value2gpio {
     int16_t vINT16_T;
     uint16_t vUINT16_T;
-    struct gpio
-    {
+    struct gpio {
         bool bit0 : 1;
         bool bit1 : 1;
         bool bit2 : 1;

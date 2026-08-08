@@ -11,6 +11,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "pico/stdlib.h"
 
 #define NUM_OF_CH (2)
@@ -35,21 +36,17 @@
 #define SIZE_FIR_FILTER_1 (48)
 #define SIZE_FIR_FILTER_2 (56)
 
-
 // 双二次フィルタの係数と遅延を定義する
-typedef struct
-{
+typedef struct {
     float a0, a1, a2;
     float b1, b2;
 } BIQUAD_FILTER;
 
-typedef struct
-{
+typedef struct {
     float z1, z2;
 } BQ_DELAY;
 
-typedef struct
-{
+typedef struct {
     BQ_DELAY delay0[SIZE_BQ_DELAY_0];
     BQ_DELAY delay1[SIZE_BQ_DELAY_1];
     BQ_DELAY delay2[SIZE_BQ_DELAY_2];
@@ -81,7 +78,13 @@ extern void clear_bq_filter_delay(void);
 extern void clear_core1_halfband_state(void);
 extern void clear_core1_polyphase_state(void);
 extern void __not_in_flash_func(upsampling_process_core0)(void);
-extern uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R, float *out_L, float *out_R, uint32_t length);
+extern uint32_t __not_in_flash_func(upsampling_process_core1)(
+    float *in_L,
+    float *in_R,
+    float *out_L,
+    float *out_R,
+    uint32_t length
+);
 extern uint32_t upsampling_core1_get_block_len(void);
 
 #endif /* _UPSAMPLING_H_ */

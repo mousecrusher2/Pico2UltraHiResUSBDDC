@@ -9,17 +9,23 @@
 #define _FFT_FIR_CORE1_H_
 
 #include <stdint.h>
-#include "pico/stdlib.h"
+
 #include "fft_fir_coef.h"
+#include "pico/stdlib.h"
 
 extern void fft_fir_core1_init(void);
 extern void fft_fir_core1_reset(void);
-extern const FFT_FIR_PROFILE *fft_fir_core1_select_profile(uint32_t freq, uint16_t ratio, bool is_high_power);
+extern const FFT_FIR_PROFILE *fft_fir_core1_select_profile(
+    uint32_t freq,
+    uint16_t ratio,
+    bool is_high_power
+);
 extern uint32_t __not_in_flash_func(fft_fir_core1_process_block)(
     const FFT_FIR_PROFILE *profile,
     const float *in_L,
     const float *in_R,
     float *out_L,
-    float *out_R);
+    float *out_R
+);
 
 #endif /* _FFT_FIR_CORE1_H_ */

@@ -11,9 +11,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "ess_specific.h"
 #include "pico/stdlib.h"
 #include "ringbuffer.h"
-#include "ess_specific.h"
 
 #define CORE1_FIR_MODE_HALF_BAND (0)
 #define CORE1_FIR_MODE_POLYPHASE (1)
@@ -73,7 +74,7 @@
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
 #define ESS_THD_COMPEN_C3 (0) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
-#define ESS_DPLL_LOCKSPEED (8)   // 0~16
+#define ESS_DPLL_LOCKSPEED (8) // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
 
@@ -98,13 +99,14 @@
 #define V_CORE_HI VREG_VOLTAGE_1_25
 #define V_CORE_LO VREG_VOLTAGE_1_05
 
-
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
 
 // アップサンプリング倍率(Core0)
-#define CORE0_UP_RATIO_MAX ((CORE0_UP_RATIO_HP) > (CORE0_UP_RATIO_LP) ? (CORE0_UP_RATIO_HP) : (CORE0_UP_RATIO_LP))
-#define CORE1_UP_RATIO_MAX ((CORE1_UP_RATIO_HP) > (CORE1_UP_RATIO_LP) ? (CORE1_UP_RATIO_HP) : (CORE1_UP_RATIO_LP))
+#define CORE0_UP_RATIO_MAX \
+    ((CORE0_UP_RATIO_HP) > (CORE0_UP_RATIO_LP) ? (CORE0_UP_RATIO_HP) : (CORE0_UP_RATIO_LP))
+#define CORE1_UP_RATIO_MAX \
+    ((CORE1_UP_RATIO_HP) > (CORE1_UP_RATIO_LP) ? (CORE1_UP_RATIO_HP) : (CORE1_UP_RATIO_LP))
 
 // FIR Filter Type: LINEAR or MINIMUM (Unavailable)
 #define LINEAR
@@ -154,16 +156,15 @@
 #define SIZE_I2C_TRANSFER_UNIT (2)
 #define I2C_ESS_DAC_TRANSFER_INTERVAL_USEC (90)
 
-typedef struct
-{
-	uint32_t freq;		// 周波数系列軸・倍率軸用(既存)
-	uint32_t bit_depth; // ビット深度軸用(追加)
-	int16_t now_volume;
-	int16_t acq_volume;
-	float vol_float;
-	int16_t vol_mul;
-	uint32_t vol_shift;
-	bool mute;
+typedef struct {
+    uint32_t freq; // 周波数系列軸・倍率軸用(既存)
+    uint32_t bit_depth; // ビット深度軸用(追加)
+    int16_t now_volume;
+    int16_t acq_volume;
+    float vol_float;
+    int16_t vol_mul;
+    uint32_t vol_shift;
+    bool mute;
 } AUDIO_STATE;
 
 extern RINGBUFFER buffer_ep_Lch;
@@ -184,87 +185,84 @@ extern void renew_clock(bool is_high_power);
 extern void cancel_timer0(void);
 extern void restart_timer0(void);
 
-inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min)
-{
-	if (in > max)
-		return max;
-	else if (in < min)
-		return min;
-	return in;
+inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min) {
+    if (in > max) {
+        return max;
+    } else if (in < min) {
+        return min;
+    }
+    return in;
 }
 
-inline float saturation_f32(float in, float max, float min)
-{
-	if (in > max)
-		return max;
-	else if (in < min)
-		return min;
-	return in;
+inline float saturation_f32(float in, float max, float min) {
+    if (in > max) {
+        return max;
+    } else if (in < min) {
+        return min;
+    }
+    return in;
 }
 
 // int32_t型をfloat型にまとめてキャスト
-inline void int32_to_float_array(int32_t *input, float *output, uint32_t length)
-{
-    for(int i=0; i<length; i++)
+inline void int32_to_float_array(int32_t *input, float *output, uint32_t length) {
+    for (int i = 0; i < length; i++) {
         output[i] = (float)input[i];
+    }
 }
 
 // float型をint32_t型にまとめてキャスト
-inline void float_to_int32_array(float *input, int32_t *output, uint32_t length)
-{
-    for(int i=0; i<length; i++)
+inline void float_to_int32_array(float *input, int32_t *output, uint32_t length) {
+    for (int i = 0; i < length; i++) {
         output[i] = (int32_t)input[i];
+    }
 }
 
 // アップサンプリング倍率をビットシフト量に変換する関数
-inline uint16_t ratio_to_bitshift(uint16_t ratio)
-{
-	switch (ratio)
-	{
-	case 2:
-		return 1;
-	case 4:
-		return 2;
-	case 8:
-		return 3;
-	default:
-		return 0;
-	}
+inline uint16_t ratio_to_bitshift(uint16_t ratio) {
+    switch (ratio) {
+        case 2:
+            return 1;
+        case 4:
+            return 2;
+        case 8:
+            return 3;
+        default:
+            return 0;
+    }
 }
 
 // アップサンプリング倍率取得関数(Core0)
-inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
-{
-	uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
-	uint16_t ratio;
-	switch (freq)
-	{
-	case 192000:
-	case 176400:
-		ratio = base >> 2;
-		break;
-	case 96000:
-	case 88200:
-		ratio = base >> 1;
-		break;
-	case 48000:
-	case 44100:
-	default:
-		ratio = base;
-		break;
-	}
+inline uint16_t get_ratio_upsampling_core0(uint32_t freq) {
+    uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
+    uint16_t ratio;
+    switch (freq) {
+        case 192000:
+        case 176400:
+            ratio = base >> 2;
+            break;
+        case 96000:
+        case 88200:
+            ratio = base >> 1;
+            break;
+        case 48000:
+        case 44100:
+        default:
+            ratio = base;
+            break;
+    }
 
-	if (ratio == 0)
-		return 1;
-	return ratio;
+    if (ratio == 0) {
+        return 1;
+    }
+    return ratio;
 }
 
-inline uint16_t get_ratio_upsampling_core1(void)
-{
-	uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
-	if (ratio == 0)
-		return 1;
-	return ratio;
+inline uint16_t get_ratio_upsampling_core1(void) {
+    uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
+    if (ratio == 0) {
+        return 1;
+    }
+    return ratio;
 }
 
 #endif

@@ -32,8 +32,7 @@
 #define FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI (16)
 #define FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI (7)
 
-typedef struct
-{
+typedef struct {
     uint32_t fs_out_hz;
     uint32_t passband_hz;
     uint32_t stopband_hz;
@@ -53,8 +52,7 @@ typedef struct
     const float *h_tail_fft;
 } FFT_FIR_PROFILE;
 
-typedef struct
-{
+typedef struct {
     uint32_t fs_out_hz;
     uint32_t passband_hz;
     uint32_t stopband_hz;

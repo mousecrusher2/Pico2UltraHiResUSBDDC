@@ -1,0 +1,63 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+InsertBraces: true
+IndentCaseLabels: true
+ColumnLimit: 100
+AccessModifierOffset: -4
+NamespaceIndentation: All
+FixNamespaceComments: false
+
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AlignAfterOpenBracket: DontAlign
+BreakAfterOpenBracketBracedList: true
+BreakAfterOpenBracketFunction: true
+BreakAfterOpenBracketIf: true
+BreakAfterOpenBracketLoop: true
+BreakAfterOpenBracketSwitch: true
+BreakBeforeCloseBracketBracedList: true
+BreakBeforeCloseBracketFunction: true
+BreakBeforeCloseBracketIf: true
+BreakBeforeCloseBracketLoop: true
+BreakBeforeCloseBracketSwitch: true
+AlignOperands: DontAlign
+BreakBeforeBinaryOperators: NonAssignment
+PenaltyReturnTypeOnItsOwnLine: 1000000
+IndentWrappedFunctionNames: true
+
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: DontAlign
+AlignTrailingComments:
+  Kind: Never
+
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<'
+    Priority: 1
+  - Regex: '^"'
+    Priority: 2
+
+ReflowComments: false
+IndentPPDirectives: None
+MaxEmptyLinesToKeep: 1
+...

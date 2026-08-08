@@ -8,23 +8,22 @@
 #ifndef _TRANSMIT_TO_DAC_H_
 #define _TRANSMIT_TO_DAC_H_
 
-#include "pico/stdlib.h"
 #include "common.h"
+#include "pico/stdlib.h"
 #include "upsampling.h"
 
-#define SIZE_DMA_TX_BUF (49 * 2 * CORE0_UP_RATIO_MAX * CORE1_UP_RATIO_MAX * CORE1_PROCESS_US / 1000 + 256)
+#define SIZE_DMA_TX_BUF \
+    (49 * 2 * CORE0_UP_RATIO_MAX * CORE1_UP_RATIO_MAX * CORE1_PROCESS_US / 1000 + 256)
 
 // DMA転送バッファはダブルバッファとして使うので2で十分
 #define SIZE_DMA_TX_BUF_STACK (DEPTH_DMA_TX_BUFFER)
 
-typedef struct
-{
+typedef struct {
     uint32_t tx_buf[SIZE_DMA_TX_BUF];
     uint32_t tx_size;
 } DMA_TX_DATA;
 
-typedef struct
-{
+typedef struct {
     DMA_TX_DATA data[DEPTH_DMA_TX_BUFFER];
     volatile uint32_t wp;
     volatile uint32_t rp;
