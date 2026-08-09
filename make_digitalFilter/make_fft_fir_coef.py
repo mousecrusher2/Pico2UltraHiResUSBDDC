@@ -1,5 +1,5 @@
-import os
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 from scipy import signal
@@ -189,8 +189,8 @@ def core1_stop(fs_out: float) -> float:
 
 
 def core1_name(fs_out: float, up_ratio: int) -> str:
-    fs_in = int(round(fs_out / up_ratio))
-    f_stop = int(round(core1_stop(fs_out)))
+    fs_in = round(fs_out / up_ratio)
+    f_stop = round(core1_stop(fs_out))
     return f"in{fs_in}_out{int(fs_out)}_pb20000_sb{f_stop}_u{up_ratio}"
 
 
@@ -216,27 +216,63 @@ def make_core1_spec(
 
 
 CORE1_SPECS = [
-    make_core1_spec(176400.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE),
-    make_core1_spec(176400.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(192000.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE),
-    make_core1_spec(192000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(352800.0, 8, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE),
-    make_core1_spec(352800.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE),
-    make_core1_spec(352800.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(384000.0, 8, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE),
-    make_core1_spec(384000.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE),
-    make_core1_spec(384000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(705600.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(768000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(
+        176400.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE
+    ),
+    make_core1_spec(
+        176400.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        192000.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE
+    ),
+    make_core1_spec(
+        192000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        352800.0, 8, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE
+    ),
+    make_core1_spec(
+        352800.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE
+    ),
+    make_core1_spec(
+        352800.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        384000.0, 8, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE
+    ),
+    make_core1_spec(
+        384000.0, 4, HEAD_BLOCK_LEN_LARGE, TAIL_BLOCK_LEN_LARGE, MAX_TAIL_PARTS_LARGE
+    ),
+    make_core1_spec(
+        384000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        705600.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        768000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
 ]
 
 CORE1_POLY_SPECS = [
-    make_core1_spec(176400.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(192000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(352800.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(384000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(705600.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
-    make_core1_spec(768000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(
+        176400.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        192000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        352800.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        384000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        705600.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
+    make_core1_spec(
+        768000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL
+    ),
 ]
 
 
@@ -270,7 +306,9 @@ def design_filter(spec: Spec, atten_db: float):
 
     best = None
     for taps_count in range(taps_guess, max_taps + 1, spec.up_ratio):
-        taps = signal.firwin(taps_count, spec.f_pass, window=("kaiser", beta), fs=spec.fs_out)
+        taps = signal.firwin(
+            taps_count, spec.f_pass, window=("kaiser", beta), fs=spec.fs_out
+        )
         taps *= spec.up_ratio
         stop_att = measure_stop_atten_db(taps, spec.fs_out, spec.f_stop)
         if best is None or stop_att > best[2]:
@@ -291,7 +329,9 @@ def design_polyphase_filter(spec: Spec, atten_db: float, max_taps: int):
 
     best = None
     for taps_count in range(taps_guess, max_taps + 1, spec.up_ratio):
-        taps = signal.firwin(taps_count, spec.f_pass, window=("kaiser", beta), fs=spec.fs_out)
+        taps = signal.firwin(
+            taps_count, spec.f_pass, window=("kaiser", beta), fs=spec.fs_out
+        )
         taps *= spec.up_ratio
         stop_att = measure_stop_atten_db(taps, spec.fs_out, spec.f_stop)
         if best is None or stop_att > best[2]:
@@ -329,7 +369,9 @@ def build_partition_fft(phase_taps: np.ndarray, block_len: int, fft_len: int) ->
     return h_fft, parts
 
 
-def build_head_tail_fft(taps: np.ndarray, up_ratio: int, head_block_len: int, tail_block_len: int) -> tuple:
+def build_head_tail_fft(
+    taps: np.ndarray, up_ratio: int, head_block_len: int, tail_block_len: int
+) -> tuple:
     phase_len = taps.shape[0] // up_ratio
     if phase_len <= 0:
         raise ValueError("phase length must be positive")
@@ -339,7 +381,9 @@ def build_head_tail_fft(taps: np.ndarray, up_ratio: int, head_block_len: int, ta
     head_fft_len = head_block_len * 2
     tail_fft_len = tail_block_len * 2
     head_h_fft = np.zeros((up_ratio, 1, head_fft_len), dtype=np.float32)
-    tail_h_fft = np.zeros((up_ratio, max(1, tail_parts), tail_fft_len), dtype=np.float32)
+    tail_h_fft = np.zeros(
+        (up_ratio, max(1, tail_parts), tail_fft_len), dtype=np.float32
+    )
 
     for phase in range(up_ratio):
         phase_taps = taps[phase::up_ratio]
@@ -353,8 +397,15 @@ def build_head_tail_fft(taps: np.ndarray, up_ratio: int, head_block_len: int, ta
             tail_taps = phase_taps[head_block_len:]
             if tail_taps.shape[0] != tail_len:
                 raise ValueError("tail length mismatch")
-            tail_taps = np.concatenate([np.zeros(head_block_len, dtype=np.float32), tail_taps.astype(np.float32)])
-            tail_part, parts = build_partition_fft(tail_taps, tail_block_len, tail_fft_len)
+            tail_taps = np.concatenate(
+                [
+                    np.zeros(head_block_len, dtype=np.float32),
+                    tail_taps.astype(np.float32),
+                ]
+            )
+            tail_part, parts = build_partition_fft(
+                tail_taps, tail_block_len, tail_fft_len
+            )
             if parts != tail_parts:
                 raise ValueError("tail parts mismatch")
             tail_h_fft[phase, :parts, :] = tail_part
@@ -387,7 +438,9 @@ def design_halfband(fs_out: float, f_pass: float, f_stop: float, atten_db: float
     return even_taps, center, center_index, taps, beta, stop_att
 
 
-def calc_dc_gain(head_h_fft: np.ndarray, tail_h_fft: np.ndarray, tail_parts: int) -> float:
+def calc_dc_gain(
+    head_h_fft: np.ndarray, tail_h_fft: np.ndarray, tail_parts: int
+) -> float:
     head_dc = np.sum(head_h_fft[:, :, 0], axis=1)
     tail_dc = np.zeros_like(head_dc)
     if tail_parts > 0:
@@ -411,7 +464,7 @@ def add_profiles(specs: list, name_prefix: str, profiles: list, maxima: dict):
             result = design_filter(spec, atten)
             if result is None:
                 raise RuntimeError(f"Failed to design filter for {spec.name}_{suffix}")
-            taps, beta, stop_att = result
+            taps, _, stop_att = result
             taps_count = taps.shape[0]
             if taps_count % spec.up_ratio != 0:
                 raise RuntimeError("tap count not divisible by up_ratio")
@@ -449,8 +502,12 @@ def add_profiles(specs: list, name_prefix: str, profiles: list, maxima: dict):
             maxima["head_parts"] = max(maxima["head_parts"], 1)
             maxima["tail_parts"] = max(maxima["tail_parts"], tail_parts)
             maxima["up_ratio"] = max(maxima["up_ratio"], spec.up_ratio)
-            maxima["head_block_len"] = max(maxima["head_block_len"], spec.head_block_len)
-            maxima["tail_block_len"] = max(maxima["tail_block_len"], spec.tail_block_len)
+            maxima["head_block_len"] = max(
+                maxima["head_block_len"], spec.head_block_len
+            )
+            maxima["tail_block_len"] = max(
+                maxima["tail_block_len"], spec.tail_block_len
+            )
             maxima["head_fft_len"] = max(maxima["head_fft_len"], head_fft_len)
             maxima["tail_fft_len"] = max(maxima["tail_fft_len"], tail_fft_len)
 
@@ -460,8 +517,10 @@ def add_poly_profiles(specs: list, poly_profiles: list, maxima: dict):
         for suffix, atten in (("hp", spec.atten_hp_db), ("lp", spec.atten_lp_db)):
             result = design_polyphase_filter(spec, atten, CORE1_POLY_TAPS_MAX)
             if result is None:
-                raise RuntimeError(f"Failed to design polyphase filter for {spec.name}_{suffix}")
-            taps, beta, stop_att = result
+                raise RuntimeError(
+                    f"Failed to design polyphase filter for {spec.name}_{suffix}"
+                )
+            taps, _, stop_att = result
             taps_count = taps.shape[0]
             if taps_count % spec.up_ratio != 0:
                 raise RuntimeError("polyphase tap count not divisible by up_ratio")
@@ -490,10 +549,10 @@ def add_poly_profiles(specs: list, poly_profiles: list, maxima: dict):
 
 
 def main():
-    out_dir = os.path.join(os.path.dirname(__file__), "..", "src")
-    os.makedirs(out_dir, exist_ok=True)
-    header_path = os.path.join(out_dir, "fft_fir_coef.h")
-    source_path = os.path.join(out_dir, "fft_fir_coef.c")
+    out_dir = Path(__file__).resolve().parent.parent / "src"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    header_path = out_dir / "fft_fir_coef.h"
+    source_path = out_dir / "fft_fir_coef.c"
 
     profiles = []
     maxima = {
@@ -509,18 +568,28 @@ def main():
         "poly_phase_len": 0,
     }
 
-    hb44_even, hb44_center, hb44_center_index, hb44_taps, hb44_beta, hb44_stop_att = design_halfband(
-        352800.0, HB_44_PASS_HZ, HB_44_STOP_HZ, HB_STOP_ATTEN_DB
+    hb44_even, hb44_center, hb44_center_index, hb44_taps, hb44_beta, hb44_stop_att = (
+        design_halfband(352800.0, HB_44_PASS_HZ, HB_44_STOP_HZ, HB_STOP_ATTEN_DB)
     )
-    hb48_even, hb48_center, hb48_center_index, hb48_taps, hb48_beta, hb48_stop_att = design_halfband(
-        384000.0, HB_48_PASS_HZ, HB_48_STOP_HZ, HB_STOP_ATTEN_DB
+    hb48_even, hb48_center, hb48_center_index, hb48_taps, hb48_beta, hb48_stop_att = (
+        design_halfband(384000.0, HB_48_PASS_HZ, HB_48_STOP_HZ, HB_STOP_ATTEN_DB)
     )
-    hb44_hi_even, hb44_hi_center, hb44_hi_center_index, hb44_hi_taps, hb44_hi_beta, hb44_hi_stop_att = design_halfband(
-        705600.0, HB_44_HI_PASS_HZ, HB_44_HI_STOP_HZ, HB_STOP_ATTEN_DB
-    )
-    hb48_hi_even, hb48_hi_center, hb48_hi_center_index, hb48_hi_taps, hb48_hi_beta, hb48_hi_stop_att = design_halfband(
-        768000.0, HB_48_HI_PASS_HZ, HB_48_HI_STOP_HZ, HB_STOP_ATTEN_DB
-    )
+    (
+        hb44_hi_even,
+        hb44_hi_center,
+        hb44_hi_center_index,
+        hb44_hi_taps,
+        hb44_hi_beta,
+        hb44_hi_stop_att,
+    ) = design_halfband(705600.0, HB_44_HI_PASS_HZ, HB_44_HI_STOP_HZ, HB_STOP_ATTEN_DB)
+    (
+        hb48_hi_even,
+        hb48_hi_center,
+        hb48_hi_center_index,
+        hb48_hi_taps,
+        hb48_hi_beta,
+        hb48_hi_stop_att,
+    ) = design_halfband(768000.0, HB_48_HI_PASS_HZ, HB_48_HI_STOP_HZ, HB_STOP_ATTEN_DB)
 
     add_profiles(CORE0_SPECS, "", profiles, maxima)
     add_profiles(CORE1_SPECS, "core1_", profiles, maxima)
@@ -528,7 +597,7 @@ def main():
     add_poly_profiles(CORE1_POLY_SPECS, poly_profiles, maxima)
 
     max_fft_len = max(maxima["head_fft_len"], maxima["tail_fft_len"])
-    with open(header_path, "w", encoding="utf-8") as hf:
+    with header_path.open("w", encoding="utf-8") as hf:
         hf.write("/*\n")
         hf.write(" * Auto-generated by make_digitalFilter/make_fft_fir_coef.py\n")
         hf.write(" */\n\n")
@@ -546,17 +615,27 @@ def main():
         hf.write(f"#define FFT_FIR_MAX_UP_RATIO ({maxima['up_ratio']})\n")
         hf.write(f"#define FFT_FIR_MAX_PHASE_LEN ({maxima['phase_len']})\n")
         hf.write("#define FFT_FIR_MAX_INPUT (FFT_FIR_HEAD_BLOCK_LEN)\n")
-        hf.write("#define FFT_FIR_MAX_OUTPUT (FFT_FIR_HEAD_BLOCK_LEN * FFT_FIR_MAX_UP_RATIO)\n\n")
+        hf.write(
+            "#define FFT_FIR_MAX_OUTPUT (FFT_FIR_HEAD_BLOCK_LEN * FFT_FIR_MAX_UP_RATIO)\n\n"
+        )
         hf.write(f"#define CORE1_POLY_TAPS_MAX ({maxima['poly_taps']})\n")
         hf.write(f"#define CORE1_POLY_PHASE_LEN_MAX ({maxima['poly_phase_len']})\n\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_44 ({hb44_even.shape[0]})\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_44 ({hb44_center_index})\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_48 ({hb48_even.shape[0]})\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_48 ({hb48_center_index})\n")
-        hf.write(f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI ({hb44_hi_even.shape[0]})\n")
-        hf.write(f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI ({hb44_hi_center_index})\n")
-        hf.write(f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI ({hb48_hi_even.shape[0]})\n")
-        hf.write(f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI ({hb48_hi_center_index})\n\n")
+        hf.write(
+            f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI ({hb44_hi_even.shape[0]})\n"
+        )
+        hf.write(
+            f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI ({hb44_hi_center_index})\n"
+        )
+        hf.write(
+            f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI ({hb48_hi_even.shape[0]})\n"
+        )
+        hf.write(
+            f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI ({hb48_hi_center_index})\n\n"
+        )
         hf.write("typedef struct\n{\n")
         hf.write("    uint32_t fs_out_hz;\n")
         hf.write("    uint32_t passband_hz;\n")
@@ -625,7 +704,7 @@ def main():
             hf.write(f"extern const CORE1_POLY_PROFILE {name_id};\n")
         hf.write("\n#endif\n")
 
-    with open(source_path, "w", encoding="utf-8") as cf:
+    with source_path.open("w", encoding="utf-8") as cf:
         cf.write("/*\n")
         cf.write(" * Auto-generated by make_digitalFilter/make_fft_fir_coef.py\n")
         cf.write(" */\n\n")
@@ -674,7 +753,9 @@ def main():
         cf.write("const float fft_fir_halfband_even_44_hi[] = {\n")
         cf.write(format_c_array(hb44_hi_even))
         cf.write("\n};\n\n")
-        cf.write(f"const float fft_fir_halfband_center_44_hi = {hb44_hi_center:.9e}f;\n\n")
+        cf.write(
+            f"const float fft_fir_halfband_center_44_hi = {hb44_hi_center:.9e}f;\n\n"
+        )
 
         cf.write(
             f"/* halfband_48_hi: taps={hb48_hi_taps}, beta={hb48_hi_beta:.3f}, stop_att={hb48_hi_stop_att:.2f} dB */\n"
@@ -682,7 +763,9 @@ def main():
         cf.write("const float fft_fir_halfband_even_48_hi[] = {\n")
         cf.write(format_c_array(hb48_hi_even))
         cf.write("\n};\n\n")
-        cf.write(f"const float fft_fir_halfband_center_48_hi = {hb48_hi_center:.9e}f;\n\n")
+        cf.write(
+            f"const float fft_fir_halfband_center_48_hi = {hb48_hi_center:.9e}f;\n\n"
+        )
 
         for profile in poly_profiles:
             spec = profile["spec"]
@@ -695,10 +778,10 @@ def main():
                 f"/* {name_id}: taps={taps_count}, phase_len={phase_len}, stop_att={stop_att:.2f} dB */\n"
             )
             cf.write(f"const float {name_id}_even[] = {{\n")
-            cf.write(format_c_array(profile['even_taps']))
+            cf.write(format_c_array(profile["even_taps"]))
             cf.write("\n};\n\n")
             cf.write(f"const float {name_id}_odd[] = {{\n")
-            cf.write(format_c_array(profile['odd_taps']))
+            cf.write(format_c_array(profile["odd_taps"]))
             cf.write("\n};\n\n")
 
         for profile in profiles:

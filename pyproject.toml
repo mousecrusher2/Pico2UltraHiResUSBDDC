@@ -1,0 +1,79 @@
+[project]
+name = "pico2ultrahiresusbddc"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.1",
+    "scipy>=1.18.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.2",
+    "scipy-stubs>=1.18.0.1",
+]
+
+[tool.ruff.lint]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "YTT",
+    "ASYNC",
+    "S",
+    "BLE",
+    "FBT",
+    "B",
+    "A",
+    "C4",
+    "DTZ",
+    "T10",
+    "FA",
+    "INT",
+    "ISC",
+    "ICN",
+    "LOG",
+    "G",
+    "PIE",
+    "PYI",
+    "RSE",
+    "RET",
+    "SLF",
+    "SIM",
+    "SLOT",
+    "TID",
+    "TC",
+    "ARG",
+    "PTH",
+    "FLY",
+    "I",
+    "NPY",
+    "N",
+    "PERF",
+    "PGH",
+    "PL",
+    "UP",
+    "FURB",
+    "RUF",
+]
+ignore = [
+    "LOG015",
+    "G004",
+    "PLC2401",
+    "PLR0915",
+    "PLR09",
+    "PLR2004",
+    "FBT003",
+    "RUF003",
+]
+
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = true
+
+[tool.ruff.lint.pep8-naming]
+extend-ignore-names = [
+    "H",
+    "amp_dB",
+]
