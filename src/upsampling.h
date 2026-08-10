@@ -9,30 +9,29 @@
 #define PICO2_UPSAMPLING_H
 
 #include <stdint.h>
+#include <pico/stdlib.h>
 
-#include "pico/stdlib.h"
+static constexpr uint32_t NUM_OF_CH = UINT32_C(2);
+static constexpr uint32_t NUM_OF_BQ_SUB_PARAMS = UINT32_C(6);
+static constexpr uint32_t SIZE_BQ_FILTER_0 = UINT32_C(17);
+static constexpr uint32_t SIZE_BQ_DELAY_0 = SIZE_BQ_FILTER_0;
 
-#define NUM_OF_CH (2)
-#define NUM_OF_BQ_SUB_PARAMS (6)
-#define SIZE_BQ_FILTER_0 (17)
-#define SIZE_BQ_DELAY_0 (SIZE_BQ_FILTER_0)
+static constexpr uint32_t SIZE_BQ_FILTER_1 = UINT32_C(5);
+static constexpr uint32_t SIZE_BQ_DELAY_1 = SIZE_BQ_FILTER_1;
 
-#define SIZE_BQ_FILTER_1 (5)
-#define SIZE_BQ_DELAY_1 (SIZE_BQ_FILTER_1)
+static constexpr uint32_t SIZE_BQ_FILTER_2 = UINT32_C(5);
+static constexpr uint32_t SIZE_BQ_DELAY_2 = SIZE_BQ_FILTER_2;
 
-#define SIZE_BQ_FILTER_2 (5)
-#define SIZE_BQ_DELAY_2 (SIZE_BQ_FILTER_2)
+static constexpr uint32_t SIZE_BQ_FILTER_3 = UINT32_C(5);
+static constexpr uint32_t SIZE_BQ_DELAY_3 = SIZE_BQ_FILTER_3;
 
-#define SIZE_BQ_FILTER_3 (5)
-#define SIZE_BQ_DELAY_3 (SIZE_BQ_FILTER_3)
+static constexpr uint32_t SIZE_BQ_FILTER_4 = UINT32_C(3);
+static constexpr uint32_t SIZE_BQ_DELAY_4 = SIZE_BQ_FILTER_4;
 
-#define SIZE_BQ_FILTER_4 (3)
-#define SIZE_BQ_DELAY_4 (SIZE_BQ_FILTER_4)
-
-#define SIZE_FIR_FILTER_0 (128)
-#define SIZE_FIR_FILTER_384K (256)
-#define SIZE_FIR_FILTER_1 (48)
-#define SIZE_FIR_FILTER_2 (56)
+static constexpr uint32_t SIZE_FIR_FILTER_0 = UINT32_C(128);
+static constexpr uint32_t SIZE_FIR_FILTER_384K = UINT32_C(256);
+static constexpr uint32_t SIZE_FIR_FILTER_1 = UINT32_C(48);
+static constexpr uint32_t SIZE_FIR_FILTER_2 = UINT32_C(56);
 
 // 双二次フィルタの係数と遅延を定義する
 typedef struct {
@@ -71,18 +70,18 @@ extern const float coef_fir_filter_384k_linear[SIZE_FIR_FILTER_384K];
 extern const float coef_fir_filter_384k[SIZE_FIR_FILTER_384K];
 extern const uint32_t size_coef_fir_filter_384k;
 
-extern void init_upsampling_filter(void);
-extern void clear_bq_filter_delay(void);
-extern void clear_core1_halfband_state(void);
-extern void clear_core1_polyphase_state(void);
-extern void __not_in_flash_func(upsampling_process_core0)(void);
-extern uint32_t __not_in_flash_func(upsampling_process_core1)(
+void init_upsampling_filter(void);
+void clear_bq_filter_delay(void);
+void clear_core1_halfband_state(void);
+void clear_core1_polyphase_state(void);
+void __not_in_flash_func(upsampling_process_core0)(void);
+uint32_t __not_in_flash_func(upsampling_process_core1)(
     const float *in_L,
     const float *in_R,
     float *out_L,
     float *out_R,
     uint32_t length
 );
-extern uint32_t upsampling_core1_get_block_len(void);
+uint32_t upsampling_core1_get_block_len(void);
 
 #endif /* PICO2_UPSAMPLING_H */

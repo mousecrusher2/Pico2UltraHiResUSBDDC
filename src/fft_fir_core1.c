@@ -7,15 +7,13 @@
 
 #include "fft_fir_core1.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <arm_math.h>
 
-#include "arm_math.h"
-
-#define FFT_FIR_PACKED_LEN (FFT_FIR_MAX_PACKED_LEN)
-#define FFT_FIR_TIME_LEN (FFT_FIR_MAX_FFT_LEN)
-#define FFT_FIR_RFFT_CACHE_SLOTS (4u)
+static constexpr uint16_t FFT_FIR_PACKED_LEN = FFT_FIR_MAX_PACKED_LEN;
+static constexpr uint16_t FFT_FIR_TIME_LEN = FFT_FIR_MAX_FFT_LEN;
+static constexpr uint32_t FFT_FIR_RFFT_CACHE_SLOTS = UINT32_C(4);
 
 static float fft_time[FFT_FIR_TIME_LEN];
 static float fft_freq[FFT_FIR_PACKED_LEN];
@@ -58,7 +56,7 @@ static arm_rfft_fast_instance_f32 *fft_fir_get_rfft(uint16_t fft_len) {
             return &rfft_cache[i].inst;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 static void __not_in_flash_func(rfft_packed_mul_store)(
@@ -110,8 +108,8 @@ static void __not_in_flash_func(fft_fir_process_channel)(
 
     arm_rfft_fast_instance_f32 *const head_rfft = fft_fir_get_rfft(head_fft_len);
     arm_rfft_fast_instance_f32 *const tail_rfft =
-        tail_parts > 0 ? fft_fir_get_rfft(tail_fft_len) : NULL;
-    if (head_rfft == NULL || (tail_parts > 0 && tail_rfft == NULL)) {
+        tail_parts > 0 ? fft_fir_get_rfft(tail_fft_len) : nullptr;
+    if (head_rfft == nullptr || (tail_parts > 0 && tail_rfft == nullptr)) {
         return;
     }
 
@@ -395,7 +393,7 @@ const FFT_FIR_PROFILE *fft_fir_core1_select_profile(
         default:
             break;
     }
-    return NULL;
+    return nullptr;
 }
 
 uint32_t __not_in_flash_func(fft_fir_core1_process_block)(
@@ -405,7 +403,7 @@ uint32_t __not_in_flash_func(fft_fir_core1_process_block)(
     float *const out_L,
     float *const out_R
 ) {
-    if (profile == NULL) {
+    if (profile == nullptr) {
         return 0;
     }
 

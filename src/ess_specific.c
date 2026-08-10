@@ -8,17 +8,15 @@
 #include "ess_specific.h"
 
 #include <math.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <hardware/gpio.h>
+#include <hardware/i2c.h>
 
 #include "common.h"
-#include "hardware/gpio.h"
-#include "hardware/i2c.h"
 #include "nonblocking_i2c.h"
 
 static bool is_ess_dac_mute = false;
 static const uint8_t i2c_ess_dac_address_7bit = (uint8_t)((uint32_t)I2C_ESS_DAC_ADDR >> 1u);
-extern I2C_RINGBUFFER i2c_ringbuffer0;
 
 void ess_dac_i2c_setup(void) {
     uint8_t i2cbuf[2] = {0, 0};

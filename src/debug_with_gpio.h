@@ -8,13 +8,12 @@
 #ifndef PICO2_DEBUG_WITH_GPIO_H
 #define PICO2_DEBUG_WITH_GPIO_H
 
-#include <stdbool.h>
 #include <stdint.h>
 
-#define GPIO_FOR_DEBUG_0 (2)
-#define GPIO_FOR_DEBUG_1 (3)
-#define GPIO_FOR_DEBUG_2 (4)
-#define GPIO_FOR_DEBUG_3 (5)
+static constexpr uint8_t GPIO_FOR_DEBUG_0 = UINT8_C(2);
+static constexpr uint8_t GPIO_FOR_DEBUG_1 = UINT8_C(3);
+static constexpr uint8_t GPIO_FOR_DEBUG_2 = UINT8_C(4);
+static constexpr uint8_t GPIO_FOR_DEBUG_3 = UINT8_C(5);
 
 typedef union value2gpio {
     int16_t vINT16_T;
@@ -39,10 +38,10 @@ typedef union value2gpio {
     } gpio;
 } value2gpio;
 
-extern void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio2, uint8_t gpio3);
-extern void gpio_toggle(uint8_t gpio);
-extern void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value);
-extern void uint16_to_gpio(int16_t in_value);
-extern void uint8_to_gpio(uint8_t in_value);
+void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio2, uint8_t gpio3);
+void gpio_toggle(uint8_t gpio);
+void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value);
+void uint16_to_gpio(int16_t in_value);
+void uint8_to_gpio(uint8_t in_value);
 
 #endif

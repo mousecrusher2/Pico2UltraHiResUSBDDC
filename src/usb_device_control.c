@@ -7,16 +7,14 @@
 
 #include "usb_device_control.h"
 
-#include <arm_math.h>
 #include <assert.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <arm_math.h>
+#include <LUFA/Drivers/USB/Class/Common/AudioClassCommon.h>
+#include <pico/usb_device.h>
 
-#include "LUFA/Drivers/USB/Class/Common/AudioClassCommon.h"
 #include "common.h"
 #include "fft_fir_core0.h"
-#include "pico/usb_device.h"
 #include "upsampling.h"
 
 // todo make descriptor strings should probably belong to the configs
@@ -25,20 +23,20 @@ static const char *const descriptor_strings[] = {MFG_NAME, DEVICE_NAME, WEBSITE_
 // todo fix these
 // VENDOR_ID
 // PRODUCT_ID
-#define VENDOR_ID (0x2e8au)
-#define PRODUCT_ID (0xfeddu)
+static constexpr uint16_t VENDOR_ID = UINT16_C(0x2e8a);
+static constexpr uint16_t PRODUCT_ID = UINT16_C(0xfedd);
 
-#define AUDIO_OUT_ENDPOINT (0x01U)
-#define AUDIO_IN_ENDPOINT 0x82U
+static constexpr uint8_t AUDIO_OUT_ENDPOINT = UINT8_C(0x01);
+static constexpr uint8_t AUDIO_IN_ENDPOINT = UINT8_C(0x82);
 
-#define AUDIO_MAX_SAMPLE_NUM (96 + 1) // (96kHz/1kHz +2)
-#define AUDIO_MAX_PACKET_SIZE \
-    (2 * 3 * AUDIO_MAX_SAMPLE_NUM) // 2ch * 3byte/ch * (freq[kHz / 1[kHz] + 1)
+static constexpr uint16_t AUDIO_MAX_SAMPLE_NUM = UINT16_C(96) + UINT16_C(1);
+// 2ch * 3byte/ch * (freq[kHz / 1[kHz] + 1)
+static constexpr uint16_t AUDIO_MAX_PACKET_SIZE = UINT16_C(2) * UINT16_C(3) * AUDIO_MAX_SAMPLE_NUM;
 
-#define FEATURE_MUTE_CONTROL (1u)
-#define FEATURE_VOLUME_CONTROL (2u)
+static constexpr uint8_t FEATURE_MUTE_CONTROL = UINT8_C(1);
+static constexpr uint8_t FEATURE_VOLUME_CONTROL = UINT8_C(2);
 
-#define ENDPOINT_FREQ_CONTROL (1u)
+static constexpr uint8_t ENDPOINT_FREQ_CONTROL = UINT8_C(1);
 
 static void as_audio_packet(struct usb_endpoint *const ep);
 
@@ -428,7 +426,7 @@ static void as_sync_packet(struct usb_endpoint *const ep) {
 
     // Feedbackパラメータ計算 アップサンプリングバッファの使用率でFBをかけている
     const float ratio = get_ratio_upsampling_core0(audio_state.freq);
-    const float feedback_buffer_target = (float)SIZE_UPSAMPLE_CORE0 / 2.0f;
+    constexpr float feedback_buffer_target = (float)SIZE_UPSAMPLE_CORE0 / 2.0f;
     const float deviation =
         (feedback_buffer_target - (float)get_size_using(&buffer_upsr_data_Lch_0)) / ratio;
     const int32_t adjust_value = saturation_i32((int32_t)deviation, FB_ADJ_LIMIT, -FB_ADJ_LIMIT);
@@ -553,7 +551,7 @@ static void audio_cmd_packet(struct usb_endpoint *const ep) {
             switch (audio_control_cmd_t.cs) {
                 case FEATURE_MUTE_CONTROL: {
                     audio_state.mute = buffer->data[0];
-                    if (audio_state.mute == true) {
+                    if (audio_state.mute) {
                         volume_control(); // ミュート状態にするために音量制御関数を呼び出す
                     }
                     break;
@@ -698,7 +696,7 @@ static bool as_setup_request_handler(
 
 void usb_sound_card_init() {
     // msd_interface.setup_request_handler = msd_setup_request_handler;
-    usb_interface_init(&ac_interface, &audio_device_config.ac_interface, NULL, 0, true);
+    usb_interface_init(&ac_interface, &audio_device_config.ac_interface, nullptr, 0, true);
     ac_interface.setup_request_handler = ac_setup_request_handler;
 
     static struct usb_endpoint *const op_endpoints[] = {&ep_op_out, &ep_op_sync};

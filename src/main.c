@@ -5,18 +5,18 @@
  * https://opensource.org/licenses/mit-license.php
  */
 
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <hardware/clocks.h>
+#include <hardware/vreg.h>
+#include <pico/multicore.h>
+#include <pico/stdio_uart.h>
+#include <pico/stdlib.h>
 
 #include "common.h"
 #include "ess_specific.h"
-#include "hardware/clocks.h"
-#include "hardware/vreg.h"
 #include "nonblocking_i2c.h"
-#include "pico/multicore.h"
-#include "pico/stdlib.h"
 #include "ringbuffer.h"
+#include "transmit_to_dac.h"
 #include "upsampling.h"
 #include "usb_device_control.h"
 
@@ -24,7 +24,7 @@
 volatile bool is_high_power_mode = true;
 
 // 処理タイミング制御用
-#define MILLISEC50 (500000 / TIMER0_US)
+static constexpr int64_t MILLISEC50 = INT64_C(500000) / TIMER0_US;
 
 // タイマー割り込み
 static struct repeating_timer timer0; // デジタルフィルタ演算を割り込みでトリガする
@@ -34,6 +34,10 @@ RINGBUFFER buffer_ep_Lch;
 RINGBUFFER buffer_ep_Rch;
 RINGBUFFER buffer_upsr_data_Lch_0;
 RINGBUFFER buffer_upsr_data_Rch_0;
+static int32_t buffer_ep_Lch_storage[SIZE_EP_BUFFER];
+static int32_t buffer_ep_Rch_storage[SIZE_EP_BUFFER];
+static int32_t buffer_upsr_data_Lch_0_storage[SIZE_UPSAMPLE_CORE0];
+static int32_t buffer_upsr_data_Rch_0_storage[SIZE_UPSAMPLE_CORE0];
 
 // I2C ring buffer
 I2C_RINGBUFFER i2c_ringbuffer0; // NOLINT(misc-use-internal-linkage): used by ess_specific.c.
@@ -53,18 +57,12 @@ static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *co
 // I2C送信インターバル
 static volatile absolute_time_t time_start_i2c_transfer = 0;
 
-// Core1メイン
-extern void core1_main(void);
-
-// ミュート解除タイミング確認用
-extern bool enable_output;
-
 void cancel_timer0(void) {
     cancel_repeating_timer(&timer0);
 }
 
 void restart_timer0(void) {
-    add_repeating_timer_us(-TIMER0_US, core0_timer_callback, NULL, &timer0);
+    add_repeating_timer_us(-TIMER0_US, core0_timer_callback, nullptr, &timer0);
 }
 
 // アップサンプリング処理のタイミングをセットする
@@ -124,7 +122,6 @@ static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *co
             clear_ringbuffer(&buffer_ep_Rch);
             clear_ringbuffer(&buffer_upsr_data_Lch_0);
             clear_ringbuffer(&buffer_upsr_data_Rch_0);
-            // clear_i2c_ringbuffer(&i2c_ringbuffer0);
             clear_bq_filter_delay();
             // i2c_dma_stop_and_clear();
             renew_clock(is_high_power_mode);
@@ -170,10 +167,30 @@ int main(void) {
     }
 
     // 各種バッファ初期化
-    initialize_ringbuffer(SIZE_EP_BUFFER, true, &buffer_ep_Lch); // USB EP受け取り用
-    initialize_ringbuffer(SIZE_EP_BUFFER, true, &buffer_ep_Rch); // USB EP受け取り用
-    initialize_ringbuffer(SIZE_UPSAMPLE_CORE0, false, &buffer_upsr_data_Lch_0); // Core1転送用
-    initialize_ringbuffer(SIZE_UPSAMPLE_CORE0, false, &buffer_upsr_data_Rch_0); // Core1転送用
+    initialize_ringbuffer(
+        buffer_ep_Lch_storage,
+        SIZE_EP_BUFFER,
+        true,
+        &buffer_ep_Lch
+    ); // USB EP受け取り用
+    initialize_ringbuffer(
+        buffer_ep_Rch_storage,
+        SIZE_EP_BUFFER,
+        true,
+        &buffer_ep_Rch
+    ); // USB EP受け取り用
+    initialize_ringbuffer(
+        buffer_upsr_data_Lch_0_storage,
+        SIZE_UPSAMPLE_CORE0,
+        false,
+        &buffer_upsr_data_Lch_0
+    ); // Core1転送用
+    initialize_ringbuffer(
+        buffer_upsr_data_Rch_0_storage,
+        SIZE_UPSAMPLE_CORE0,
+        false,
+        &buffer_upsr_data_Rch_0
+    ); // Core1転送用
 
     // オーディオステータス初期化
     audio_state.freq = AUDIO_INITIAL_FREQ;
@@ -205,7 +222,7 @@ int main(void) {
     }
 
     // アップサンプリング処理用Timer割り込みをアタッチする
-    add_repeating_timer_us(-TIMER0_US, core0_timer_callback, NULL, &timer0);
+    add_repeating_timer_us(-TIMER0_US, core0_timer_callback, nullptr, &timer0);
 
     // Core1を起動する Core1ではI2S出力処理をしている
     multicore_launch_core1(core1_main);

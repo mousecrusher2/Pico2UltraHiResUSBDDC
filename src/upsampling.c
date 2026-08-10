@@ -7,11 +7,10 @@
 
 #include "upsampling.h"
 
-#include <arm_math.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arm_math.h>
 
 #include "common.h"
 #include "fft_fir_core0.h"
@@ -127,7 +126,7 @@ static void initialize_bq_filter_coef(void) {
 }
 
 // アップサンプリングフィルタの初期化処理
-extern void init_upsampling_filter(void) {
+void init_upsampling_filter(void) {
     initialize_bq_filter_coef();
     clear_bq_filter_delay();
     fft_fir_core0_init();
@@ -135,7 +134,7 @@ extern void init_upsampling_filter(void) {
 }
 
 // BiQuad-IIRフィルタの遅延バッファをクリアする
-extern void clear_bq_filter_delay(void) {
+void clear_bq_filter_delay(void) {
     for (uint16_t i = 0; i < SIZE_BQ_DELAY_3 * 4; i++) {
         biquad3L_state[i] = 0;
         biquad3R_state[i] = 0;
@@ -197,7 +196,7 @@ static void __not_in_flash_func(polyphase_interp2)(
     state->index = idx;
 }
 
-extern void clear_core1_halfband_state(void) {
+void clear_core1_halfband_state(void) {
     for (uint16_t i = 0; i < FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI; i++) {
         hb_state_core1_L_44_hi[i] = 0;
         hb_state_core1_R_44_hi[i] = 0;
@@ -208,10 +207,10 @@ extern void clear_core1_halfband_state(void) {
     }
 }
 
-extern void clear_core1_polyphase_state(void) {
+void clear_core1_polyphase_state(void) {
     memset(&core1_poly_state_L, 0, sizeof(core1_poly_state_L));
     memset(&core1_poly_state_R, 0, sizeof(core1_poly_state_R));
-    core1_poly_profile_active = NULL;
+    core1_poly_profile_active = nullptr;
 }
 
 uint32_t upsampling_core1_get_block_len(void) {
@@ -239,7 +238,7 @@ uint32_t upsampling_core1_get_block_len(void) {
 #endif
     const FFT_FIR_PROFILE *const profile =
         fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
-    if (profile == NULL) {
+    if (profile == nullptr) {
         return 0;
     }
 
@@ -252,10 +251,13 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_2x_3)(
     uint32_t length,
     const float *p_in,
     float *const p_out,
-    arm_biquad_casd_df1_inst_f32 *const S
+    const arm_biquad_casd_df1_inst_f32 *const S
 ) {
     uint32_t length_buffer = length;
     float *const NOS_buffer = (float *)malloc(sizeof(float) * (length * 2u));
+    if (NOS_buffer == nullptr) {
+        return 0;
+    }
     float *p_NOS_buffer = NOS_buffer;
 
     // サンプル数を2倍にする NOS方式
@@ -276,10 +278,13 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(
     uint32_t length,
     const float *p_in,
     float *const p_out,
-    arm_biquad_casd_df1_inst_f32 *const S
+    const arm_biquad_casd_df1_inst_f32 *const S
 ) {
     uint32_t length_buffer = length;
     float *const NOS_buffer = (float *)malloc(sizeof(float) * (length * 4u));
+    if (NOS_buffer == nullptr) {
+        return 0;
+    }
     float *p_NOS_buffer = NOS_buffer;
 
     // サンプル数を4倍にする NOS方式
@@ -339,7 +344,7 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
     if (stage1_ratio > 0) {
         const FFT_FIR_PROFILE *const profile_stage1 =
             fft_fir_core0_select_profile(audio_state.freq, stage1_ratio, is_high_power_mode);
-        if (profile_stage1 == NULL) {
+        if (profile_stage1 == nullptr) {
             goto single_stage;
         }
 
@@ -416,7 +421,7 @@ void __not_in_flash_func(upsampling_process_core0)(void) {
 single_stage: {
     const FFT_FIR_PROFILE *const profile =
         fft_fir_core0_select_profile(audio_state.freq, ratio, is_high_power_mode);
-    if (profile == NULL) {
+    if (profile == nullptr) {
         return;
     }
 
@@ -473,7 +478,7 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
     const uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
 #if CORE1_FIR_MODE == CORE1_FIR_MODE_POLYPHASE
     if (ratio == 2) {
-        const CORE1_POLY_PROFILE *profile = NULL;
+        const CORE1_POLY_PROFILE *profile = nullptr;
         switch (freq_in) {
             case 88200:
                 profile = is_high_power_mode ? &core1_poly_in88200_out176400_pb20000_sb79380_u2_hp
@@ -506,7 +511,7 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
             default:
                 break;
         }
-        if (profile != NULL) {
+        if (profile != nullptr) {
             if (core1_poly_profile_active != profile) {
                 clear_core1_polyphase_state();
                 core1_poly_profile_active = profile;
@@ -555,7 +560,7 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(
 #endif
     const FFT_FIR_PROFILE *const profile =
         fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
-    if (profile == NULL) {
+    if (profile == nullptr) {
         goto fallback_iir;
     }
 

@@ -1,7 +1,9 @@
 # Generated Cmake Pico project file
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.21)
 
+# Keep SDK and fetched C sources on their existing standard. Project-owned
+# firmware sources opt into C23 in src/CMakeLists.txt.
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -32,6 +34,8 @@ include(pico_sdk_import.cmake)
 include(example_auto_set_url.cmake)
 
 project(Pico2UltraHiResUSBDDC C CXX ASM)
+
+option(ENABLE_GCC_ANALYZER "Enable GCC static analysis for project firmware sources" OFF)
 
 include(CheckIPOSupported)
 check_ipo_supported(
@@ -119,7 +123,7 @@ pico_sdk_init()
 add_subdirectory(src)
 
 # Compile Definitions
-target_compile_definitions(Pico2UltraHiResUSBDDC PRIVATE
+set(FIRMWARE_COMPILE_DEFINITIONS
     AUDIO_FREQ_MAX=192000
 
     # ours are zero based, so say so
@@ -132,3 +136,5 @@ target_compile_definitions(Pico2UltraHiResUSBDDC PRIVATE
     PICO_USBDEV_ISOCHRONOUS_BUFFER_STRIDE_TYPE=3
     PICO_USBDEV_ENABLE_DEBUG_TRACE
 )
+target_compile_definitions(firmware_sources PRIVATE ${FIRMWARE_COMPILE_DEFINITIONS})
+target_compile_definitions(Pico2UltraHiResUSBDDC PRIVATE ${FIRMWARE_COMPILE_DEFINITIONS})

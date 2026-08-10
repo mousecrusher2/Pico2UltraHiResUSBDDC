@@ -5,10 +5,9 @@
 * https://opensource.org/licenses/mit-license.php
  */
 
-#include <stdbool.h>
+#include <pico/stdlib.h>
 
 #include "common.h"
-#include "pico/stdlib.h"
 #include "transmit_to_dac.h"
 
 void core1_main(void) { // NOLINT(misc-use-internal-linkage): launched from main.c.

@@ -7,12 +7,11 @@
 
 #include "ringbuffer.h"
 
-#include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
-extern int16_t initialize_ringbuffer(
+void initialize_ringbuffer(
+    int32_t *const storage,
     uint32_t size,
     bool no_spinlock,
     RINGBUFFER *const ringbuffer
@@ -26,44 +25,36 @@ extern int16_t initialize_ringbuffer(
     ringbuffer->write_point = 0;
     ringbuffer->read_point = 0;
     ringbuffer->size_using = 0;
-    ringbuffer->buffer = (int32_t *)malloc(sizeof(int32_t) * size);
-    return 0;
+    ringbuffer->buffer = storage;
 }
 
-extern void clear_ringbuffer(RINGBUFFER *const ringbuffer) {
+void clear_ringbuffer(RINGBUFFER *const ringbuffer) {
     ringbuffer->write_point = 0;
     ringbuffer->read_point = 0;
     ringbuffer->size_using = 0;
 }
 
-extern bool __not_in_flash_func(ringbuffer_is_full)(const RINGBUFFER *const ringbuffer) {
-    if (ringbuffer->write_point - ringbuffer->read_point >= ringbuffer->size_buffer) {
-        return true;
-    } else {
-        return false;
-    }
+bool __not_in_flash_func(ringbuffer_is_full)(const RINGBUFFER *const ringbuffer) {
+    return ringbuffer->write_point - ringbuffer->read_point >= ringbuffer->size_buffer;
 }
 
-extern int64_t __not_in_flash_func(get_size_using)(const RINGBUFFER *const ringbuffer) {
+int64_t __not_in_flash_func(get_size_using)(const RINGBUFFER *const ringbuffer) {
     return ringbuffer->size_using;
 }
 
-extern int64_t __not_in_flash_func(get_size_remain)(const RINGBUFFER *const ringbuffer) {
+int64_t __not_in_flash_func(get_size_remain)(const RINGBUFFER *const ringbuffer) {
     return ringbuffer->size_buffer - ringbuffer->size_using;
 }
 
-extern uint32_t __not_in_flash_func(get_read_point)(const RINGBUFFER *const ringbuffer) {
+uint32_t __not_in_flash_func(get_read_point)(const RINGBUFFER *const ringbuffer) {
     return ringbuffer->read_point;
 }
 
-extern uint32_t __not_in_flash_func(get_write_point)(const RINGBUFFER *const ringbuffer) {
+uint32_t __not_in_flash_func(get_write_point)(const RINGBUFFER *const ringbuffer) {
     return ringbuffer->write_point;
 }
 
-extern int16_t __not_in_flash_func(ringbuf_write_spinlock)(
-    int32_t input,
-    RINGBUFFER *const ringbuffer
-) {
+int16_t __not_in_flash_func(ringbuf_write_spinlock)(int32_t input, RINGBUFFER *const ringbuffer) {
     if (ringbuffer->size_using == ringbuffer->size_buffer) {
         return -1; // buffer is full
     }
@@ -79,7 +70,7 @@ extern int16_t __not_in_flash_func(ringbuf_write_spinlock)(
     return 1;
 }
 
-extern int16_t __not_in_flash_func(ringbuf_write_no_spinlock)(
+int16_t __not_in_flash_func(ringbuf_write_no_spinlock)(
     int32_t input,
     RINGBUFFER *const ringbuffer
 ) {
@@ -96,7 +87,7 @@ extern int16_t __not_in_flash_func(ringbuf_write_no_spinlock)(
     return 1;
 }
 
-extern int16_t __not_in_flash_func(ringbuf_read_spinlock)(
+int16_t __not_in_flash_func(ringbuf_read_spinlock)(
     int32_t *const output,
     RINGBUFFER *const ringbuffer
 ) {
@@ -116,7 +107,7 @@ extern int16_t __not_in_flash_func(ringbuf_read_spinlock)(
     return 1;
 }
 
-extern int16_t __not_in_flash_func(ringbuf_read_no_spinlock)(
+int16_t __not_in_flash_func(ringbuf_read_no_spinlock)(
     int32_t *const output,
     RINGBUFFER *const ringbuffer
 ) {
@@ -134,7 +125,7 @@ extern int16_t __not_in_flash_func(ringbuf_read_no_spinlock)(
     return 1;
 }
 
-extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
+int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
     int32_t *const output,
     uint32_t size,
     RINGBUFFER *const ringbuffer
@@ -167,7 +158,7 @@ extern int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(
     return size;
 }
 
-extern int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(
+int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(
     int32_t *const output,
     uint32_t size,
     RINGBUFFER *const ringbuffer
@@ -197,7 +188,7 @@ extern int64_t __not_in_flash_func(ringbuf_read_array_no_spinlock)(
     return size;
 }
 
-extern int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(
+int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(
     const int32_t *const input,
     uint32_t size,
     RINGBUFFER *const ringbuffer
@@ -236,7 +227,7 @@ extern int64_t __not_in_flash_func(ringbuf_write_array_spinlock)(
     return size;
 }
 
-extern int64_t __not_in_flash_func(ringbuf_write_array_no_spinlock)(
+int64_t __not_in_flash_func(ringbuf_write_array_no_spinlock)(
     const int32_t *const input,
     uint32_t size,
     RINGBUFFER *const ringbuffer

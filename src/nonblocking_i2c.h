@@ -8,12 +8,11 @@
 #ifndef PICO2_NONBLOCKING_I2C_H
 #define PICO2_NONBLOCKING_I2C_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <hardware/i2c.h>
 
 #include "common.h"
-#include "hardware/i2c.h"
 
 typedef struct I2C_RB_DATA {
     i2c_inst_t *i2c;
@@ -31,9 +30,11 @@ typedef struct RB_I2C {
     I2C_RB_DATA *buffer;
 } I2C_RINGBUFFER;
 
-extern void i2c_dma_initialize(i2c_inst_t *i2c);
-extern bool i2c_dma_is_busy(void);
-extern void i2c_write_dma(
+extern I2C_RINGBUFFER i2c_ringbuffer0;
+
+void i2c_dma_initialize(i2c_inst_t *i2c);
+bool i2c_dma_is_busy(void);
+void i2c_write_dma(
     i2c_inst_t *i2c_inst,
     uint8_t addr_7bit,
     const uint8_t *data,
@@ -41,11 +42,11 @@ extern void i2c_write_dma(
     bool nostop
 );
 
-extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *ringbuffer);
-extern int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *ringbuffer);
-extern int16_t i2c_ringbuf_write(const I2C_RB_DATA *input, I2C_RINGBUFFER *ringbuffer);
-extern int16_t i2c_ringbuf_read(I2C_RB_DATA *output, I2C_RINGBUFFER *ringbuffer);
-extern void i2c_ringbuf_set_data(
+int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *ringbuffer);
+int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *ringbuffer);
+int16_t i2c_ringbuf_write(const I2C_RB_DATA *input, I2C_RINGBUFFER *ringbuffer);
+int16_t i2c_ringbuf_read(I2C_RB_DATA *output, I2C_RINGBUFFER *ringbuffer);
+void i2c_ringbuf_set_data(
     i2c_inst_t *i2c,
     uint8_t addr_7bit,
     const uint8_t *data,
@@ -53,6 +54,6 @@ extern void i2c_ringbuf_set_data(
     bool nostop,
     I2C_RB_DATA *output
 );
-extern void i2c_dma_stop_and_clear(void);
+void i2c_dma_stop_and_clear(void);
 
 #endif

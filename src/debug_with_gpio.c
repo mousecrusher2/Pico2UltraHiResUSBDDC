@@ -7,19 +7,13 @@
 
 #include "debug_with_gpio.h"
 
-#include <stdbool.h>
 #include <stdint.h>
-
-#include "pico/stdlib.h"
+#include <pico/stdlib.h>
 
 static uint8_t gpio_assignment[4] = {0};
 static volatile uint32_t offtime = 10;
 
-extern void gpio_out_set_offtime(uint32_t offtime_) {
-    offtime = offtime_;
-}
-
-extern void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio2, uint8_t gpio3) {
+void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio2, uint8_t gpio3) {
     gpio_assignment[0] = gpio0;
     gpio_assignment[1] = gpio1;
     gpio_assignment[2] = gpio2;
@@ -31,8 +25,8 @@ extern void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio
     }
 }
 
-extern void gpio_toggle(uint8_t gpio) {
-    if (gpio_get(gpio) == false) {
+void gpio_toggle(uint8_t gpio) {
+    if (!gpio_get(gpio)) {
         gpio_put(gpio, true);
     } else {
         (gpio_put(gpio, false));
@@ -46,7 +40,7 @@ static void gpio_offtime(void) {
     }
 }
 
-extern void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
+void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
     uint8_t in_buf = in_value;
 
     gpio_put(gpio, false);
@@ -61,7 +55,7 @@ extern void uint8_to_single_gpio(uint8_t gpio, uint8_t in_value) {
     sleep_us(1);
 }
 
-extern void uint16_to_gpio(int16_t in_value) {
+void uint16_to_gpio(int16_t in_value) {
     const value2gpio outvalue = {.vUINT16_T = in_value};
 
     gpio_put(gpio_assignment[0], false);
@@ -91,7 +85,7 @@ extern void uint16_to_gpio(int16_t in_value) {
     gpio_offtime();
 }
 
-extern void uint8_to_gpio(uint8_t in_value) {
+void uint8_to_gpio(uint8_t in_value) {
     const value2gpio outvalue = {.vUINT16_T = in_value};
 
     gpio_put(gpio_assignment[0], false);

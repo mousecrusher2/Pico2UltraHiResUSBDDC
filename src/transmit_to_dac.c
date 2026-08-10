@@ -7,20 +7,19 @@
 
 #include "transmit_to_dac.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <hardware/dma.h>
 
-#include "hardware/dma.h"
 #include "i2s_pio_interface.h"
 #include "upsampling.h"
 
 static pio_hw_t *const pio = pio0;
-static const uint sm = 0;
+static constexpr uint sm = 0;
 static pio_sm_config sm_config;
 static uint offset;
 
-#define DMA_TX_CHAIN_CHANNELS (2)
+static constexpr uint8_t DMA_TX_CHAIN_CHANNELS = UINT8_C(2);
 
 typedef enum {
     DMA_CH_STATE_IDLE = 0,
@@ -200,7 +199,6 @@ static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 
 // 出力状態バッファ
 static volatile bool enable_output_prev = false;
-extern volatile absolute_time_t time_start_output;
 
 void __not_in_flash_func(dma_tx_start)(void) {
     const int32_t length = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
@@ -216,7 +214,7 @@ void __not_in_flash_func(dma_tx_start)(void) {
     }
 
     // 出力開始した時間を取得
-    if (enable_output == true && enable_output_prev == false) {
+    if (enable_output && !enable_output_prev) {
         time_start_output = get_absolute_time();
         // Resync I2S frame phase on playback start to prevent L/R swap.
         pio_sm_set_enabled(pio, sm, false);
@@ -230,7 +228,7 @@ void __not_in_flash_func(dma_tx_start)(void) {
         // 入ってくるデータが枯渇した、またはDMA送信バッファに規定量以上データが蓄積されているときはデータ送信処理をしない
         if ((length > 0) && (dma_tx.using < SIZE_DMA_TX_BUF_STACK)) {
             const uint32_t core1_block_len = upsampling_core1_get_block_len();
-            const int32_t max_in_len =
+            constexpr int32_t max_in_len =
                 (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
             int32_t transmit_ref_size =
                 (int32_t)((float)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq))

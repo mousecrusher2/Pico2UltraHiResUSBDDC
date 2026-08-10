@@ -24,9 +24,9 @@ def print_filter_params(param_, filter_type):
             print("{", end="")
             for j in range(param.shape[1]):
                 if j != param.shape[1] - 1:
-                    print(param[i][j], end=", ")
+                    print(f"{param[i][j]}f", end=", ")
                 else:
-                    print(param[i][j], end="")
+                    print(f"{param[i][j]}f", end="")
 
             if i != param.shape[0] - 1:
                 print("},")
@@ -40,9 +40,9 @@ def print_filter_params(param_, filter_type):
             print("{", end="")
             for j in range(param.shape[1]):
                 if j != param.shape[1] - 1:
-                    print(param[i][j], end=", ")
+                    print(f"{param[i][j]}f", end=", ")
                 else:
-                    print(param[i][j], end="")
+                    print(f"{param[i][j]}f", end="")
 
             if i != param.shape[0] - 1:
                 print("},")
@@ -55,9 +55,9 @@ def print_filter_params(param_, filter_type):
         print("\nfir_filter_coef[] = \n{", end="")
         for i in range(param.shape[0]):
             if i != param.shape[0] - 1:
-                print(param[i], end=", ")
+                print(f"{param[i]}f", end=", ")
             else:
-                print(param[i], end="")
+                print(f"{param[i]}f", end="")
             count += 1
             if (count > 5) & (i != param.shape[0] - 1):
                 print("\n", end="")

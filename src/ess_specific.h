@@ -8,31 +8,31 @@
 #ifndef PICO2_ESS_SPECIFIC_H
 #define PICO2_ESS_SPECIFIC_H
 
-#include <stdbool.h>
+#include <stdint.h>
 
 // ESS DAC Kind
-#define ESS_DAC_NONE 0
-#define ES9010K2M 1
-#define ES9038Q2M 2
-#define ES9039Q2M 3
-#define ES9038PRO 4
-#define ES9039PRO 5
+static constexpr uint8_t ESS_DAC_NONE = UINT8_C(0);
+static constexpr uint8_t ES9010K2M = UINT8_C(1);
+static constexpr uint8_t ES9038Q2M = UINT8_C(2);
+static constexpr uint8_t ES9039Q2M = UINT8_C(3);
+static constexpr uint8_t ES9038PRO = UINT8_C(4);
+static constexpr uint8_t ES9039PRO = UINT8_C(5);
 
 // ESS DAC Default ADDR
-#define ADDR0_NONE 0x00
-#define ADDR0_ES9010K2M 0x90
-#define ADDR0_ES9038Q2M 0x90
-#define ADDR0_ES9039Q2M 0x90
-#define ADDR0_ES9039PRO 0x90
-#define ADDR1_ES9039PRO 0x92
+static constexpr uint8_t ADDR0_NONE = UINT8_C(0x00);
+static constexpr uint8_t ADDR0_ES9010K2M = UINT8_C(0x90);
+static constexpr uint8_t ADDR0_ES9038Q2M = UINT8_C(0x90);
+static constexpr uint8_t ADDR0_ES9039Q2M = UINT8_C(0x90);
+static constexpr uint8_t ADDR0_ES9039PRO = UINT8_C(0x90);
+static constexpr uint8_t ADDR1_ES9039PRO = UINT8_C(0x92);
 
-extern void ess_dac_i2c_setup(void);
-extern void ess_dac_initialize(void);
-extern void ess_dac_activate(void);
+void ess_dac_i2c_setup(void);
+void ess_dac_initialize(void);
+void ess_dac_activate(void);
 
-extern void ess_dac_volume(void);
-extern bool get_ess_dac_mute(void);
-extern void ess_dac_mute(void);
-extern void ess_dac_unmute(void);
+void ess_dac_volume(void);
+bool get_ess_dac_mute(void);
+void ess_dac_mute(void);
+void ess_dac_unmute(void);
 
 #endif

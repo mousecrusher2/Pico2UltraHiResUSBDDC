@@ -8,6 +8,6 @@
 #ifndef PICO2_USB_DEVICE_CONTROL_H
 #define PICO2_USB_DEVICE_CONTROL_H
 
-extern void usb_sound_card_init();
+void usb_sound_card_init();
 
 #endif /* PICO2_USB_DEVICE_CONTROL_H */

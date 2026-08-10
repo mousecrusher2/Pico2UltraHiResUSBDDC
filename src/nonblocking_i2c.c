@@ -7,15 +7,13 @@
 
 #include "nonblocking_i2c.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "hardware/dma.h"
-#include "hardware/i2c.h"
-#include "pico/stdlib.h"
+#include <hardware/dma.h>
+#include <hardware/i2c.h>
+#include <pico/stdlib.h>
 
 static bool is_transferring_data;
 static i2c_hw_t *i2c_hw;
@@ -46,7 +44,7 @@ void i2c_write_dma(
     size_t len,
     bool nostop
 ) {
-    if (len == 0 || data == NULL) {
+    if (len == 0 || data == nullptr) {
         return;
     }
 
@@ -127,7 +125,7 @@ static void i2c_irq_handler(void) {
 }
 
 // ---------------------- ring buffer ----------------------
-extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *const ringbuffer) {
+int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *const ringbuffer) {
     ringbuffer->size_buffer = size;
     ringbuffer->write_point = 0;
     ringbuffer->read_point = 0;
@@ -136,37 +134,11 @@ extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *const ri
     return 0;
 }
 
-extern void clear_i2c_ringbuffer(I2C_RINGBUFFER *const ringbuffer) {
-    ringbuffer->write_point = 0;
-    ringbuffer->read_point = 0;
-    ringbuffer->size_using = 0;
-}
-
-extern bool i2c_ringbuf_is_full(const I2C_RINGBUFFER *const ringbuffer) {
-    if (ringbuffer->write_point - ringbuffer->read_point >= ringbuffer->size_buffer) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-extern int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *const ringbuffer) {
+int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *const ringbuffer) {
     return ringbuffer->size_using;
 }
 
-extern int64_t i2c_ringbuf_get_size_remain(const I2C_RINGBUFFER *const ringbuffer) {
-    return ringbuffer->size_buffer - ringbuffer->size_using;
-}
-
-extern uint32_t i2c_ringbuf_get_read_point(const I2C_RINGBUFFER *const ringbuffer) {
-    return ringbuffer->read_point;
-}
-
-extern uint32_t i2c_ringbuf_get_write_point(const I2C_RINGBUFFER *const ringbuffer) {
-    return ringbuffer->write_point;
-}
-
-extern int16_t i2c_ringbuf_write(const I2C_RB_DATA *const input, I2C_RINGBUFFER *const ringbuffer) {
+int16_t i2c_ringbuf_write(const I2C_RB_DATA *const input, I2C_RINGBUFFER *const ringbuffer) {
     if (ringbuffer->size_using == ringbuffer->size_buffer) {
         return -1; // buffer is full
     }
@@ -180,7 +152,7 @@ extern int16_t i2c_ringbuf_write(const I2C_RB_DATA *const input, I2C_RINGBUFFER 
     return 1;
 }
 
-extern int16_t i2c_ringbuf_read(I2C_RB_DATA *const output, I2C_RINGBUFFER *const ringbuffer) {
+int16_t i2c_ringbuf_read(I2C_RB_DATA *const output, I2C_RINGBUFFER *const ringbuffer) {
     if (ringbuffer->size_using == 0) {
         return -1; // buffer is empty
     }

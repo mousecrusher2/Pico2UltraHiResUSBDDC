@@ -178,7 +178,7 @@ Guidelines:
 
 ## 9. Coding conventions and guardrails
 
-- Language: C11.
+- Language: C23 for project-owned firmware sources. Pico SDK, Pico Extras, and CMSIS-DSP remain C11.
 - Use shifts only for bit representation, packing, extraction, or masks; use `*` and `/` for arithmetic.
 - Keep functions small and single-purpose in real-time modules.
 - Prefer static allocation for audio buffers. Memory fragmentation or heap usage can break real-time.
