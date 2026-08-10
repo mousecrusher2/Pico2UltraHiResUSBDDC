@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <hardware/i2c.h>
-
 #include "common.h"
 
 typedef struct I2C_RB_DATA {

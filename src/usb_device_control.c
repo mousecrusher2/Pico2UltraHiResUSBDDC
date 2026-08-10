@@ -6,13 +6,13 @@
  */
 
 #include "usb_device_control.h"
-
 #include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <arm_math.h>
-#include <LUFA/Drivers/USB/Class/Common/AudioClassCommon.h>
 #include <pico/usb_device.h>
-
+#include <LUFA/Drivers/USB/Class/Common/AudioClassCommon.h>
 #include "common.h"
 #include "fft_fir_core0.h"
 #include "upsampling.h"

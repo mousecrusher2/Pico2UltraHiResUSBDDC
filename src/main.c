@@ -11,7 +11,6 @@
 #include <pico/multicore.h>
 #include <pico/stdio_uart.h>
 #include <pico/stdlib.h>
-
 #include "common.h"
 #include "ess_specific.h"
 #include "nonblocking_i2c.h"

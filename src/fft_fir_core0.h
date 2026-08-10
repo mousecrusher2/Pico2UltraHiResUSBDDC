@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <pico/stdlib.h>
-
 #include "fft_fir_coef.h"
 
 void fft_fir_core0_init(void);

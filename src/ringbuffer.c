@@ -6,7 +6,6 @@
 */
 
 #include "ringbuffer.h"
-
 #include <stdint.h>
 #include <string.h>
 

@@ -6,7 +6,6 @@
 */
 
 #include "debug_with_gpio.h"
-
 #include <stdint.h>
 #include <pico/stdlib.h>
 

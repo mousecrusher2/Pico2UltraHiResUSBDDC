@@ -6,11 +6,9 @@
 */
 
 #include "transmit_to_dac.h"
-
 #include <stdint.h>
 #include <string.h>
 #include <hardware/dma.h>
-
 #include "i2s_pio_interface.h"
 #include "upsampling.h"
 

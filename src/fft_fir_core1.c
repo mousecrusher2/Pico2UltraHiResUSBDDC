@@ -6,7 +6,6 @@
 */
 
 #include "fft_fir_core1.h"
-
 #include <stdint.h>
 #include <string.h>
 #include <arm_math.h>

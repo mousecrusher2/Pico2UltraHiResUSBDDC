@@ -6,7 +6,6 @@
  */
 
 #include <pico/stdlib.h>
-
 #include "common.h"
 #include "transmit_to_dac.h"
 

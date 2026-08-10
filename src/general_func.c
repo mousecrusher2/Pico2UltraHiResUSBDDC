@@ -10,7 +10,6 @@
 #include <hardware/gpio.h>
 #include <hardware/i2c.h>
 #include <hardware/vreg.h>
-
 #include "common.h"
 #include "nonblocking_i2c.h"
 #include "transmit_to_dac.h"

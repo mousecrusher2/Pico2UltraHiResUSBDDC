@@ -6,7 +6,6 @@
  */
 
 #include "nonblocking_i2c.h"
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

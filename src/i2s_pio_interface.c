@@ -6,9 +6,7 @@
 */
 
 #include "i2s_pio_interface.h"
-
 #include <hardware/clocks.h>
-
 #include "common.h"
 #include "i2s.pio.h"
 

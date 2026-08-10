@@ -6,12 +6,10 @@
  */
 
 #include "upsampling.h"
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arm_math.h>
-
 #include "common.h"
 #include "fft_fir_core0.h"
 #include "fft_fir_core1.h"

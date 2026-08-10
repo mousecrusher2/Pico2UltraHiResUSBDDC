@@ -6,12 +6,10 @@
  */
 
 #include "ess_specific.h"
-
 #include <math.h>
 #include <stdint.h>
 #include <hardware/gpio.h>
 #include <hardware/i2c.h>
-
 #include "common.h"
 #include "nonblocking_i2c.h"
 

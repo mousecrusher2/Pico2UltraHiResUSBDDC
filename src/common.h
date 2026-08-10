@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <hardware/i2c.h>
 #include <hardware/vreg.h>
-
 #include "ess_specific.h"
 #include "ringbuffer.h"
 

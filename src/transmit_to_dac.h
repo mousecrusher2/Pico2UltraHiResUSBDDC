@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <pico/time.h>
-
 #include "common.h"
 
 static constexpr uint32_t SIZE_DMA_TX_BUF = UINT32_C(49) * UINT32_C(2) * CORE0_UP_RATIO_MAX
