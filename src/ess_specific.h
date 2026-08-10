@@ -11,20 +11,20 @@
 #include <stdint.h>
 
 // ESS DAC Kind
-static constexpr uint8_t ESS_DAC_NONE = UINT8_C(0);
-static constexpr uint8_t ES9010K2M = UINT8_C(1);
-static constexpr uint8_t ES9038Q2M = UINT8_C(2);
-static constexpr uint8_t ES9039Q2M = UINT8_C(3);
-static constexpr uint8_t ES9038PRO = UINT8_C(4);
-static constexpr uint8_t ES9039PRO = UINT8_C(5);
+static constexpr uint8_t ESS_DAC_NONE = 0;
+static constexpr uint8_t ES9010K2M = 1;
+static constexpr uint8_t ES9038Q2M = 2;
+static constexpr uint8_t ES9039Q2M = 3;
+static constexpr uint8_t ES9038PRO = 4;
+static constexpr uint8_t ES9039PRO = 5;
 
 // ESS DAC Default ADDR
-static constexpr uint8_t ADDR0_NONE = UINT8_C(0x00);
-static constexpr uint8_t ADDR0_ES9010K2M = UINT8_C(0x90);
-static constexpr uint8_t ADDR0_ES9038Q2M = UINT8_C(0x90);
-static constexpr uint8_t ADDR0_ES9039Q2M = UINT8_C(0x90);
-static constexpr uint8_t ADDR0_ES9039PRO = UINT8_C(0x90);
-static constexpr uint8_t ADDR1_ES9039PRO = UINT8_C(0x92);
+static constexpr uint8_t ADDR0_NONE = 0x00;
+static constexpr uint8_t ADDR0_ES9010K2M = 0x90;
+static constexpr uint8_t ADDR0_ES9038Q2M = 0x90;
+static constexpr uint8_t ADDR0_ES9039Q2M = 0x90;
+static constexpr uint8_t ADDR0_ES9039PRO = 0x90;
+static constexpr uint8_t ADDR1_ES9039PRO = 0x92;
 
 void ess_dac_i2c_setup(void);
 void ess_dac_initialize(void);

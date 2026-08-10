@@ -7,30 +7,30 @@
 
 #include <stdint.h>
 
-static constexpr uint16_t FFT_FIR_HEAD_BLOCK_LEN = UINT16_C(128);
-static constexpr uint16_t FFT_FIR_HEAD_FFT_LEN = UINT16_C(256);
-static constexpr uint16_t FFT_FIR_TAIL_BLOCK_LEN = UINT16_C(256);
-static constexpr uint16_t FFT_FIR_TAIL_FFT_LEN = UINT16_C(512);
-static constexpr uint16_t FFT_FIR_MAX_FFT_LEN = UINT16_C(512);
+static constexpr uint16_t FFT_FIR_HEAD_BLOCK_LEN = 128;
+static constexpr uint16_t FFT_FIR_HEAD_FFT_LEN = 256;
+static constexpr uint16_t FFT_FIR_TAIL_BLOCK_LEN = 256;
+static constexpr uint16_t FFT_FIR_TAIL_FFT_LEN = 512;
+static constexpr uint16_t FFT_FIR_MAX_FFT_LEN = 512;
 static constexpr uint16_t FFT_FIR_MAX_PACKED_LEN = FFT_FIR_MAX_FFT_LEN;
-static constexpr uint16_t FFT_FIR_MAX_HEAD_PARTS = UINT16_C(1);
-static constexpr uint16_t FFT_FIR_MAX_TAIL_PARTS = UINT16_C(1);
-static constexpr uint16_t FFT_FIR_MAX_UP_RATIO = UINT16_C(8);
-static constexpr uint16_t FFT_FIR_MAX_PHASE_LEN = UINT16_C(56);
+static constexpr uint16_t FFT_FIR_MAX_HEAD_PARTS = 1;
+static constexpr uint16_t FFT_FIR_MAX_TAIL_PARTS = 1;
+static constexpr uint16_t FFT_FIR_MAX_UP_RATIO = 8;
+static constexpr uint16_t FFT_FIR_MAX_PHASE_LEN = 56;
 static constexpr uint16_t FFT_FIR_MAX_INPUT = FFT_FIR_HEAD_BLOCK_LEN;
 static constexpr uint16_t FFT_FIR_MAX_OUTPUT = FFT_FIR_HEAD_BLOCK_LEN * FFT_FIR_MAX_UP_RATIO;
 
-static constexpr uint16_t CORE1_POLY_TAPS_MAX = UINT16_C(30);
-static constexpr uint16_t CORE1_POLY_PHASE_LEN_MAX = UINT16_C(15);
+static constexpr uint16_t CORE1_POLY_TAPS_MAX = 30;
+static constexpr uint16_t CORE1_POLY_PHASE_LEN_MAX = 15;
 
-static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_44 = UINT16_C(16);
-static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_44 = UINT16_C(7);
-static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_48 = UINT16_C(16);
-static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_48 = UINT16_C(7);
-static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI = UINT16_C(16);
-static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI = UINT16_C(7);
-static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI = UINT16_C(16);
-static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI = UINT16_C(7);
+static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_44 = 16;
+static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_44 = 7;
+static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_48 = 16;
+static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_48 = 7;
+static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI = 16;
+static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI = 7;
+static constexpr uint16_t FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI = 16;
+static constexpr uint16_t FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI = 7;
 
 typedef struct {
     uint32_t fs_out_hz;

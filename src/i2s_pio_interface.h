@@ -10,7 +10,6 @@
 
 #include <hardware/pio.h>
 
-
 void I2S_16bit_program_init(
     PIO pio,
     uint sm,

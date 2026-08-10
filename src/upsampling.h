@@ -11,27 +11,27 @@
 #include <stdint.h>
 #include <pico/stdlib.h>
 
-static constexpr uint32_t NUM_OF_CH = UINT32_C(2);
-static constexpr uint32_t NUM_OF_BQ_SUB_PARAMS = UINT32_C(6);
-static constexpr uint32_t SIZE_BQ_FILTER_0 = UINT32_C(17);
+static constexpr uint32_t NUM_OF_CH = 2;
+static constexpr uint32_t NUM_OF_BQ_SUB_PARAMS = 6;
+static constexpr uint32_t SIZE_BQ_FILTER_0 = 17;
 static constexpr uint32_t SIZE_BQ_DELAY_0 = SIZE_BQ_FILTER_0;
 
-static constexpr uint32_t SIZE_BQ_FILTER_1 = UINT32_C(5);
+static constexpr uint32_t SIZE_BQ_FILTER_1 = 5;
 static constexpr uint32_t SIZE_BQ_DELAY_1 = SIZE_BQ_FILTER_1;
 
-static constexpr uint32_t SIZE_BQ_FILTER_2 = UINT32_C(5);
+static constexpr uint32_t SIZE_BQ_FILTER_2 = 5;
 static constexpr uint32_t SIZE_BQ_DELAY_2 = SIZE_BQ_FILTER_2;
 
-static constexpr uint32_t SIZE_BQ_FILTER_3 = UINT32_C(5);
+static constexpr uint32_t SIZE_BQ_FILTER_3 = 5;
 static constexpr uint32_t SIZE_BQ_DELAY_3 = SIZE_BQ_FILTER_3;
 
-static constexpr uint32_t SIZE_BQ_FILTER_4 = UINT32_C(3);
+static constexpr uint32_t SIZE_BQ_FILTER_4 = 3;
 static constexpr uint32_t SIZE_BQ_DELAY_4 = SIZE_BQ_FILTER_4;
 
-static constexpr uint32_t SIZE_FIR_FILTER_0 = UINT32_C(128);
-static constexpr uint32_t SIZE_FIR_FILTER_384K = UINT32_C(256);
-static constexpr uint32_t SIZE_FIR_FILTER_1 = UINT32_C(48);
-static constexpr uint32_t SIZE_FIR_FILTER_2 = UINT32_C(56);
+static constexpr uint32_t SIZE_FIR_FILTER_0 = 128;
+static constexpr uint32_t SIZE_FIR_FILTER_384K = 256;
+static constexpr uint32_t SIZE_FIR_FILTER_1 = 48;
+static constexpr uint32_t SIZE_FIR_FILTER_2 = 56;
 
 // 双二次フィルタの係数と遅延を定義する
 typedef struct {

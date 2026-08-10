@@ -39,26 +39,26 @@ static constexpr bool I2S_STRENGTH_REINFORCE_ENABLE = true;
 
 // Power Mode Switch Pin
 // The Hi-Power Mode, Core0 uses 384KHz FIR Filter
-static constexpr uint32_t POWER_MODE_SWITCH_PIN = UINT32_C(0);
+static constexpr uint32_t POWER_MODE_SWITCH_PIN = 0;
 static constexpr bool ALWAYS_HIGH_POWER = true;
 
 // I2C
 static i2c_inst_t *const I2C_PORT = i2c1;
-static constexpr uint32_t I2C_SDA = UINT32_C(6);
-static constexpr uint32_t I2C_SCL = UINT32_C(7);
+static constexpr uint32_t I2C_SDA = 6;
+static constexpr uint32_t I2C_SCL = 7;
 
 // I2S Pin : sideset0:BCLK, sideset1:LRCK (if No Changed)
 static constexpr bool I2S_SIDESET_CHANGE = false;
-static constexpr uint32_t I2S_DATA_PIN = UINT32_C(26);
-static constexpr uint32_t I2S_SIDESET_BASE = UINT32_C(27);
+static constexpr uint32_t I2S_DATA_PIN = 26;
+static constexpr uint32_t I2S_SIDESET_BASE = 27;
 
 // Upsampler control
 // Core0 ratio is for 48k family; 96k uses /2, 192k uses /4 (min 1).
-static constexpr uint16_t CORE0_UP_RATIO_HP = UINT16_C(8);
-static constexpr uint16_t CORE0_UP_RATIO_LP = UINT16_C(4);
+static constexpr uint16_t CORE0_UP_RATIO_HP = 8;
+static constexpr uint16_t CORE0_UP_RATIO_LP = 4;
 // Core1 ratio is applied directly (1/2/4 are supported).
-static constexpr uint16_t CORE1_UP_RATIO_HP = UINT16_C(1);
-static constexpr uint16_t CORE1_UP_RATIO_LP = UINT16_C(1);
+static constexpr uint16_t CORE1_UP_RATIO_HP = 1;
+static constexpr uint16_t CORE1_UP_RATIO_LP = 1;
 // Adjust this according to your filter to avoid clipping.
 static constexpr float DEFAULT_GAIN_RATIO = 0.75f;
 
@@ -71,27 +71,27 @@ static constexpr bool ENABLE_ES9038Q2M_DEPOP = false;
 static constexpr bool ENABLE_ESS_DAC_VOLUME = false;
 static constexpr bool ENABLE_ESS_DAC_THD_COMPEN = false;
 static constexpr bool ENABLE_ESS_THD_COMPEN_VOL_CORR = false;
-static constexpr int16_t ESS_THD_COMPEN_C2 = INT16_C(0);
-static constexpr int16_t ESS_THD_COMPEN_C3 = INT16_C(0);
-static constexpr uint8_t ESS_DPLL_BANDWIDTH = UINT8_C(0xA0); // 0~255, 0 is DPLL off
-static constexpr uint8_t ESS_DPLL_LOCKSPEED = UINT8_C(8); // 0~16
+static constexpr int16_t ESS_THD_COMPEN_C2 = 0;
+static constexpr int16_t ESS_THD_COMPEN_C3 = 0;
+static constexpr uint8_t ESS_DPLL_BANDWIDTH = 0xA0; // 0~255, 0 is DPLL off
+static constexpr uint8_t ESS_DPLL_LOCKSPEED = 8; // 0~16
 static constexpr int64_t TIME_ES9038Q2M_DEPOP_USEC = INT64_C(40000);
-static constexpr uint32_t DAC_ENABLE_PIN = UINT32_C(5);
+static constexpr uint32_t DAC_ENABLE_PIN = 5;
 
 // Other Function
 static constexpr bool USE_EXT_POWER_ENABLE = false;
-static constexpr uint32_t EXT_POWER_ENABLE_PIN = UINT32_C(3);
-static constexpr uint32_t BOOT_WAIT_TIME_US = UINT32_C(50000);
+static constexpr uint32_t EXT_POWER_ENABLE_PIN = 3;
+static constexpr uint32_t BOOT_WAIT_TIME_US = 50000;
 
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
 //#define SYS_CLOCK_KHZ_44K (412000)
 //#define SYS_CLOCK_KHZ_48K (430000)
-static constexpr uint32_t SYS_CLOCK_KHZ_44K = UINT32_C(336000);
-static constexpr uint32_t SYS_CLOCK_KHZ_48K = UINT32_C(336000);
-static constexpr uint32_t SYS_CLOCK_KHZ_LP_44K = UINT32_C(208000);
-static constexpr uint32_t SYS_CLOCK_KHZ_LP_48K = UINT32_C(208000);
+static constexpr uint32_t SYS_CLOCK_KHZ_44K = 336000;
+static constexpr uint32_t SYS_CLOCK_KHZ_48K = 336000;
+static constexpr uint32_t SYS_CLOCK_KHZ_LP_44K = 208000;
+static constexpr uint32_t SYS_CLOCK_KHZ_LP_48K = 208000;
 // 208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
 
 // Core Voltage
@@ -100,7 +100,7 @@ static constexpr enum vreg_voltage V_CORE_HI = VREG_VOLTAGE_1_25;
 static constexpr enum vreg_voltage V_CORE_LO = VREG_VOLTAGE_1_05;
 
 // 初期オーディオサンプル周波数
-static constexpr uint32_t AUDIO_INITIAL_FREQ = UINT32_C(44100);
+static constexpr uint32_t AUDIO_INITIAL_FREQ = 44100;
 
 // アップサンプリング倍率(Core0)
 static constexpr uint16_t CORE0_UP_RATIO_MAX =
@@ -112,26 +112,26 @@ static constexpr uint16_t CORE1_UP_RATIO_MAX =
 #define CORE1_FIR_MODE CORE1_FIR_MODE_POLYPHASE
 
 // DCDC Control
-static constexpr uint32_t DCDC_MODE_PIN = UINT32_C(23);
+static constexpr uint32_t DCDC_MODE_PIN = 23;
 
 // LED
-static constexpr uint32_t ONBOARD_LED_PIN = UINT32_C(25);
+static constexpr uint32_t ONBOARD_LED_PIN = 25;
 
 // Core0 Timer0 period (us) 雑多な処理用
 static constexpr int64_t TIMER0_US = INT64_C(250);
 
 // Core1 DMA/processing chunk size (us). Larger values give more upsampling time.
-static constexpr uint32_t CORE1_PROCESS_US = UINT32_C(2000);
+static constexpr uint32_t CORE1_PROCESS_US = 2000;
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
-static constexpr uint32_t SIZE_EP_BUFFER = UINT32_C(512);
+static constexpr uint32_t SIZE_EP_BUFFER = 512;
 
 // アップサンプリングバッファサイズ
 // Core0 Upsampling Buffer Size (samples per channel)
-static constexpr uint32_t SIZE_UPSAMPLE_CORE0 = UINT32_C(8192);
+static constexpr uint32_t SIZE_UPSAMPLE_CORE0 = 8192;
 
 // DMA転送バッファサイズ 3以上あればよい
-static constexpr uint32_t DEPTH_DMA_TX_BUFFER = UINT32_C(3);
+static constexpr uint32_t DEPTH_DMA_TX_BUFFER = 3;
 
 // FB水位(50%が望ましい)
 static constexpr int32_t SIZE_BUFFER_FB_THRESHOLD = (int32_t)(SIZE_UPSAMPLE_CORE0 / UINT32_C(2));
@@ -146,8 +146,8 @@ static constexpr int16_t MAX_VOLUME = INT16_C(0);
 static constexpr int16_t DEFAULT_VOLUME = INT16_C(0);
 
 // ノンブロッキングI2C
-static constexpr uint16_t SIZE_I2C_RINGBUFFER = UINT16_C(8);
-static constexpr uint8_t SIZE_I2C_TRANSFER_MAX = UINT8_C(32);
+static constexpr uint16_t SIZE_I2C_RINGBUFFER = 8;
+static constexpr uint8_t SIZE_I2C_TRANSFER_MAX = 32;
 static constexpr int64_t I2C_ESS_DAC_TRANSFER_INTERVAL_USEC = INT64_C(90);
 
 typedef struct {

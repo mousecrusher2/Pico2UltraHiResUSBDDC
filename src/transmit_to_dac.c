@@ -19,7 +19,7 @@ static constexpr uint sm = 0;
 static pio_sm_config sm_config;
 static uint offset;
 
-static constexpr uint8_t DMA_TX_CHAIN_CHANNELS = UINT8_C(2);
+static constexpr uint8_t DMA_TX_CHAIN_CHANNELS = 2;
 
 typedef enum {
     DMA_CH_STATE_IDLE = 0,

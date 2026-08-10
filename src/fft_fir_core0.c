@@ -13,8 +13,8 @@
 
 static constexpr uint16_t FFT_FIR_PACKED_LEN = FFT_FIR_MAX_PACKED_LEN;
 static constexpr uint16_t FFT_FIR_TIME_LEN = FFT_FIR_MAX_FFT_LEN;
-static constexpr uint8_t FFT_FIR_STAGE_MAX = UINT8_C(2);
-static constexpr uint32_t FFT_FIR_RFFT_CACHE_SLOTS = UINT32_C(4);
+static constexpr uint8_t FFT_FIR_STAGE_MAX = 2;
+static constexpr uint32_t FFT_FIR_RFFT_CACHE_SLOTS = 4;
 
 static float fft_time[FFT_FIR_TIME_LEN];
 static float fft_freq[FFT_FIR_PACKED_LEN];

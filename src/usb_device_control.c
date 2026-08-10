@@ -23,20 +23,20 @@ static const char *const descriptor_strings[] = {MFG_NAME, DEVICE_NAME, WEBSITE_
 // todo fix these
 // VENDOR_ID
 // PRODUCT_ID
-static constexpr uint16_t VENDOR_ID = UINT16_C(0x2e8a);
-static constexpr uint16_t PRODUCT_ID = UINT16_C(0xfedd);
+static constexpr uint16_t VENDOR_ID = 0x2e8a;
+static constexpr uint16_t PRODUCT_ID = 0xfedd;
 
-static constexpr uint8_t AUDIO_OUT_ENDPOINT = UINT8_C(0x01);
-static constexpr uint8_t AUDIO_IN_ENDPOINT = UINT8_C(0x82);
+static constexpr uint8_t AUDIO_OUT_ENDPOINT = 0x01;
+static constexpr uint8_t AUDIO_IN_ENDPOINT = 0x82;
 
 static constexpr uint16_t AUDIO_MAX_SAMPLE_NUM = UINT16_C(96) + UINT16_C(1);
 // 2ch * 3byte/ch * (freq[kHz / 1[kHz] + 1)
 static constexpr uint16_t AUDIO_MAX_PACKET_SIZE = UINT16_C(2) * UINT16_C(3) * AUDIO_MAX_SAMPLE_NUM;
 
-static constexpr uint8_t FEATURE_MUTE_CONTROL = UINT8_C(1);
-static constexpr uint8_t FEATURE_VOLUME_CONTROL = UINT8_C(2);
+static constexpr uint8_t FEATURE_MUTE_CONTROL = 1;
+static constexpr uint8_t FEATURE_VOLUME_CONTROL = 2;
 
-static constexpr uint8_t ENDPOINT_FREQ_CONTROL = UINT8_C(1);
+static constexpr uint8_t ENDPOINT_FREQ_CONTROL = 1;
 
 static void as_audio_packet(struct usb_endpoint *const ep);
 

@@ -10,10 +10,10 @@
 
 #include <stdint.h>
 
-static constexpr uint8_t GPIO_FOR_DEBUG_0 = UINT8_C(2);
-static constexpr uint8_t GPIO_FOR_DEBUG_1 = UINT8_C(3);
-static constexpr uint8_t GPIO_FOR_DEBUG_2 = UINT8_C(4);
-static constexpr uint8_t GPIO_FOR_DEBUG_3 = UINT8_C(5);
+static constexpr uint8_t GPIO_FOR_DEBUG_0 = 2;
+static constexpr uint8_t GPIO_FOR_DEBUG_1 = 3;
+static constexpr uint8_t GPIO_FOR_DEBUG_2 = 4;
+static constexpr uint8_t GPIO_FOR_DEBUG_3 = 5;
 
 typedef union value2gpio {
     int16_t vINT16_T;
