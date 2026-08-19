@@ -76,7 +76,6 @@ Important `src/` files:
 - `i2s.pio` + `i2s_pio_interface.c/.h` : PIO program and helpers
 - `ringbuffer.c/.h` : lock-aware ring buffers between subsystems/cores
 - `ess_specific.c/.h` + `nonblocking_i2c.c/.h` : optional ESS DAC register control over I2C
-- `debug_with_gpio.c/.h` : logic-analyzer friendly debug output
 - `common.h` : user configuration macros and global constants
 
 ## 4. Runtime architecture (high-level)
@@ -165,7 +164,7 @@ Guidelines:
 ## 8. Debugging and instrumentation
 
 - GPIO-based timing probes:
-  - Enable `TEST_MODE` and use `TEST_PIN1/2` or `debug_with_gpio.*` helpers.
+  - Enable `TEST_MODE` and use `TEST_PIN1/2`.
   - This is the preferred method for cycle/timing validation (logic analyzer, scope).
 
 - UART logging:

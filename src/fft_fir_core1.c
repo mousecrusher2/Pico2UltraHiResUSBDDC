@@ -298,10 +298,6 @@ static void __not_in_flash_func(fft_fir_process_channel)(
     }
 }
 
-void fft_fir_core1_init(void) {
-    fft_fir_core1_reset();
-}
-
 void fft_fir_core1_reset(void) {
     memset(&state_L, 0, sizeof(state_L));
     memset(&state_R, 0, sizeof(state_R));

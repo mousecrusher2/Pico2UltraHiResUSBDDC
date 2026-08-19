@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 ArqAlice 
+* Copyright (c) 2025 ArqAlice
 *
 * Released under the MIT license
 * https://opensource.org/licenses/mit-license.php
@@ -12,10 +12,11 @@
 #include <hardware/sync.h>
 
 typedef struct RB {
-    volatile uint32_t size_buffer;
-    volatile uint32_t write_point;
-    volatile uint32_t read_point;
-    volatile uint32_t size_using;
+    uint32_t size_buffer;
+    // Payload access is protected by the spinlock or by masking the owning core's IRQs.
+    _Atomic uint32_t write_point;
+    _Atomic uint32_t read_point;
+    _Atomic uint32_t size_using;
     int32_t *buffer;
     spin_lock_t *spinlock;
     bool no_spinlock;
@@ -31,8 +32,6 @@ void clear_ringbuffer(RINGBUFFER *ringbuffer);
 bool __not_in_flash_func(ringbuffer_is_full)(const RINGBUFFER *ringbuffer);
 int64_t __not_in_flash_func(get_size_using)(const RINGBUFFER *ringbuffer);
 int64_t __not_in_flash_func(get_size_remain)(const RINGBUFFER *ringbuffer);
-uint32_t __not_in_flash_func(get_read_point)(const RINGBUFFER *ringbuffer);
-uint32_t __not_in_flash_func(get_write_point)(const RINGBUFFER *ringbuffer);
 int16_t __not_in_flash_func(ringbuf_read_spinlock)(int32_t *output, RINGBUFFER *ringbuffer);
 int16_t __not_in_flash_func(ringbuf_write_spinlock)(int32_t input, RINGBUFFER *ringbuffer);
 int64_t __not_in_flash_func(ringbuf_read_array_spinlock)(

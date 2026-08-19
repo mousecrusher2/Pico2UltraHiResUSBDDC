@@ -6,16 +6,18 @@
  */
 
 #include "nonblocking_i2c.h"
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <hardware/dma.h>
 #include <hardware/i2c.h>
+#include <hardware/sync.h>
 #include <pico/stdlib.h>
 
-static bool is_transferring_data;
-static i2c_hw_t *i2c_hw;
+static _Atomic bool is_transferring_data;
+static _Atomic(i2c_hw_t *) i2c_hw;
 static int dma_ch;
 static dma_channel_config c_dma;
 static uint32_t i2c_tx_cmd_data[16];
@@ -33,7 +35,7 @@ void i2c_dma_initialize(i2c_inst_t *const i2c) {
 }
 
 bool i2c_dma_is_busy(void) {
-    return is_transferring_data;
+    return atomic_load_explicit(&is_transferring_data, memory_order_acquire);
 }
 
 void i2c_write_dma(
@@ -52,22 +54,26 @@ void i2c_write_dma(
         tight_loop_contents();
     }
 
+    i2c_hw_t *selected_hw;
+
     // I2Cのアドレスを格納し、割り込み処理をセット
     if (i2c == i2c0) {
-        is_transferring_data = true;
-        i2c_hw = i2c0_hw;
-        i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを有効化
-        i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを有効化
-        i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_ABRT_BITS; // TX_ABRT割り込みを有効化
+        atomic_store_explicit(&is_transferring_data, true, memory_order_release);
+        selected_hw = i2c0_hw;
+        atomic_store_explicit(&i2c_hw, selected_hw, memory_order_release);
+        selected_hw->intr_mask |= I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを有効化
+        selected_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを有効化
+        selected_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_ABRT_BITS; // TX_ABRT割り込みを有効化
         irq_set_exclusive_handler(I2C0_IRQ, i2c_irq_handler);
         irq_set_enabled(I2C0_IRQ, true);
         irq_set_priority(I2C0_IRQ, 0);
     } else if (i2c == i2c1) {
-        is_transferring_data = true;
-        i2c_hw = i2c1_hw;
-        i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを有効化
-        i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを有効化
-        i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_ABRT_BITS; // TX_ABRT割り込みを有効化
+        atomic_store_explicit(&is_transferring_data, true, memory_order_release);
+        selected_hw = i2c1_hw;
+        atomic_store_explicit(&i2c_hw, selected_hw, memory_order_release);
+        selected_hw->intr_mask |= I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを有効化
+        selected_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを有効化
+        selected_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_ABRT_BITS; // TX_ABRT割り込みを有効化
         irq_set_exclusive_handler(I2C1_IRQ, i2c_irq_handler);
         irq_set_enabled(I2C1_IRQ, true);
         irq_set_priority(I2C1_IRQ, 0);
@@ -86,15 +92,15 @@ void i2c_write_dma(
     }
 
     // I2C無効化 → アドレス設定 → 有効化
-    i2c_hw->enable = 0;
-    i2c_hw->tar = addr_7bit; // 7bitアドレス（左にシフトしない）
-    i2c_hw->enable = 1;
+    selected_hw->enable = 0;
+    selected_hw->tar = addr_7bit; // 7bitアドレス（左にシフトしない）
+    selected_hw->enable = 1;
 
     // DMAで先頭〜(n-2)バイト送信
     dma_channel_configure(
         dma_ch,
         &c_dma,
-        &i2c_hw->data_cmd, // 書き込み先
+        &selected_hw->data_cmd, // 書き込み先
         (void *)i2c_tx_cmd_data, // 読み込み元
         len,
         true // 即開始
@@ -105,63 +111,77 @@ void i2c_write_dma(
 }
 
 static void i2c_irq_handler(void) {
-    i2c_hw->clr_stop_det; // STOP割り込みフラグをクリア
-    i2c_hw->clr_tx_abrt; // Abort割り込みフラグをクリア
+    i2c_hw_t *const selected_hw = atomic_load_explicit(&i2c_hw, memory_order_acquire);
+    selected_hw->clr_stop_det; // STOP割り込みフラグをクリア
+    selected_hw->clr_tx_abrt; // Abort割り込みフラグをクリア
 
     // I2Cの割り込み処理の割付を解除
-    i2c_hw->intr_mask &= ~I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを無効化
-    i2c_hw->intr_mask &= ~I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを無効化
-    i2c_hw->intr_mask &= ~I2C_IC_INTR_MASK_M_TX_ABRT_BITS; // TX_ABRT割り込みを無効化
+    selected_hw->intr_mask &= ~I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを無効化
+    selected_hw->intr_mask &= ~I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを無効化
+    selected_hw->intr_mask &= ~I2C_IC_INTR_MASK_M_TX_ABRT_BITS; // TX_ABRT割り込みを無効化
 
-    if (i2c_hw == i2c0_hw) {
+    if (selected_hw == i2c0_hw) {
         irq_remove_handler(I2C0_IRQ, i2c_irq_handler);
         irq_set_enabled(I2C0_IRQ, false);
-    } else if (i2c_hw == i2c1_hw) {
+    } else if (selected_hw == i2c1_hw) {
         irq_remove_handler(I2C1_IRQ, i2c_irq_handler);
         irq_set_enabled(I2C1_IRQ, false);
     }
-    is_transferring_data = false;
+    atomic_store_explicit(&is_transferring_data, false, memory_order_release);
 }
 
 // ---------------------- ring buffer ----------------------
 int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *const ringbuffer) {
     ringbuffer->size_buffer = size;
-    ringbuffer->write_point = 0;
-    ringbuffer->read_point = 0;
-    ringbuffer->size_using = 0;
+    atomic_init(&ringbuffer->write_point, 0);
+    atomic_init(&ringbuffer->read_point, 0);
+    atomic_init(&ringbuffer->size_using, 0);
     ringbuffer->buffer = (I2C_RB_DATA *)malloc(sizeof(I2C_RB_DATA) * size);
     return 0;
 }
 
 int64_t i2c_ringbuf_get_size_using(const I2C_RINGBUFFER *const ringbuffer) {
-    return ringbuffer->size_using;
+    return atomic_load_explicit(&ringbuffer->size_using, memory_order_acquire);
 }
 
 int16_t i2c_ringbuf_write(const I2C_RB_DATA *const input, I2C_RINGBUFFER *const ringbuffer) {
-    if (ringbuffer->size_using == ringbuffer->size_buffer) {
+    const uint32_t interrupt_state = save_and_disable_interrupts();
+    const uint16_t size_using =
+        (uint16_t)atomic_load_explicit(&ringbuffer->size_using, memory_order_relaxed);
+    if (size_using >= ringbuffer->size_buffer) {
+        restore_interrupts(interrupt_state);
         return -1; // buffer is full
     }
 
-    memcpy(ringbuffer->buffer + (ringbuffer->write_point), input, sizeof(I2C_RB_DATA));
-    ringbuffer->write_point++;
-    if (ringbuffer->write_point >= ringbuffer->size_buffer) {
-        ringbuffer->write_point = 0;
+    uint16_t write_point = atomic_load_explicit(&ringbuffer->write_point, memory_order_relaxed);
+    memcpy(ringbuffer->buffer + write_point, input, sizeof(I2C_RB_DATA));
+    write_point++;
+    if (write_point >= ringbuffer->size_buffer) {
+        write_point = 0;
     }
-    ringbuffer->size_using++;
+    atomic_store_explicit(&ringbuffer->write_point, write_point, memory_order_relaxed);
+    atomic_store_explicit(&ringbuffer->size_using, (int16_t)(size_using + 1), memory_order_release);
+    restore_interrupts(interrupt_state);
     return 1;
 }
 
 int16_t i2c_ringbuf_read(I2C_RB_DATA *const output, I2C_RINGBUFFER *const ringbuffer) {
-    if (ringbuffer->size_using == 0) {
+    const uint32_t interrupt_state = save_and_disable_interrupts();
+    const int16_t size_using = atomic_load_explicit(&ringbuffer->size_using, memory_order_relaxed);
+    if (size_using == 0) {
+        restore_interrupts(interrupt_state);
         return -1; // buffer is empty
     }
 
-    memcpy(output, ringbuffer->buffer + (ringbuffer->read_point), sizeof(I2C_RB_DATA));
-    ringbuffer->read_point++;
-    if (ringbuffer->read_point >= ringbuffer->size_buffer) {
-        ringbuffer->read_point = 0;
+    uint16_t read_point = atomic_load_explicit(&ringbuffer->read_point, memory_order_relaxed);
+    memcpy(output, ringbuffer->buffer + read_point, sizeof(I2C_RB_DATA));
+    read_point++;
+    if (read_point >= ringbuffer->size_buffer) {
+        read_point = 0;
     }
-    ringbuffer->size_using--;
+    atomic_store_explicit(&ringbuffer->read_point, read_point, memory_order_relaxed);
+    atomic_store_explicit(&ringbuffer->size_using, size_using - 1, memory_order_release);
+    restore_interrupts(interrupt_state);
     return 1;
 }
 
@@ -187,5 +207,5 @@ void i2c_dma_stop_and_clear(void) {
     // DMAステータスをリセット
     dma_hw->ints1 = UINT32_C(1) << (uint32_t)dma_ch;
 
-    is_transferring_data = false;
+    atomic_store_explicit(&is_transferring_data, false, memory_order_release);
 }

@@ -35,7 +35,6 @@ set(PROJECT_SRC
         fft_fir_core0.c
         fft_fir_core1.c
         ringbuffer.c
-        debug_with_gpio.c
         ess_specific.c
         nonblocking_i2c.c
 )
@@ -62,6 +61,7 @@ target_link_libraries(cmsis_dsp_selected PRIVATE
 # own C sources directly to the final executable target.
 add_library(firmware_sources OBJECT ${PROJECT_SRC})
 target_compile_features(firmware_sources PRIVATE c_std_23)
+target_compile_definitions(firmware_sources PRIVATE PICO_RP2040=0)
 set_target_properties(firmware_sources PROPERTIES
         C_STANDARD 23
         C_STANDARD_REQUIRED ON
@@ -71,7 +71,6 @@ target_compile_options(firmware_sources PRIVATE
         -ffast-math
         -Wall
         -Wextra
-        -Wpedantic
         -Wstrict-prototypes
         -Wmissing-prototypes
         -Wmissing-declarations

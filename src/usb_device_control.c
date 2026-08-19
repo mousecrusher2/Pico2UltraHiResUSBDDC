@@ -7,6 +7,7 @@
 
 #include "usb_device_control.h"
 #include <assert.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -360,6 +361,7 @@ static uint16_t buffer_length_limiter(uint32_t freq, uint16_t length) {
 // USB EPバッファ取得処理
 static uint16_t __not_in_flash_func(usb_ep_data_acquire)(
     uint bit_depth,
+    uint32_t freq,
     const int16_t *ep,
     uint in_length,
     float *const buf_left_ch,
@@ -368,14 +370,14 @@ static uint16_t __not_in_flash_func(usb_ep_data_acquire)(
     uint sample_num;
     const uint16_t *u16_ep =
         (const uint16_t *)ep; // 24bitデータ処理のため int16_t -> uint16_t 型に変更
-    volatile int32_t data = 0;
+    int32_t data = 0;
     uint length = 0;
     uint count = 0;
 
     switch (bit_depth) {
         case 32:
             length = in_length / 4; // (4byte(32bit) /ch)
-            length = buffer_length_limiter(audio_state.freq, length);
+            length = buffer_length_limiter(freq, length);
             sample_num = length;
             while (sample_num--) {
                 data = (int32_t)((uint32_t)u16_ep[0] | ((uint32_t)u16_ep[1] << 16u));
@@ -389,7 +391,7 @@ static uint16_t __not_in_flash_func(usb_ep_data_acquire)(
 
         case 24:
             length = in_length / 3; // (3byte(24bit) /ch)
-            length = buffer_length_limiter(audio_state.freq, length);
+            length = buffer_length_limiter(freq, length);
             sample_num = length;
             while (sample_num--) {
                 data = (int32_t)(((uint32_t)u16_ep[0] << 8u) | ((uint32_t)u16_ep[1] << 24u));
@@ -404,7 +406,7 @@ static uint16_t __not_in_flash_func(usb_ep_data_acquire)(
         case 16:
         default:
             length = in_length / 2; // (2byte(16bit) /ch)
-            length = buffer_length_limiter(audio_state.freq, length);
+            length = buffer_length_limiter(freq, length);
             sample_num = length;
             while (sample_num--) {
                 data = (int32_t)*ep++ * INT32_C(65536);
@@ -425,13 +427,15 @@ static void as_sync_packet(struct usb_endpoint *const ep) {
     buffer->data_len = 3;
 
     // Feedbackパラメータ計算 アップサンプリングバッファの使用率でFBをかけている
-    const float ratio = get_ratio_upsampling_core0(audio_state.freq);
+    const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+    const float ratio = get_ratio_upsampling_core0_for_power_mode(freq, high_power);
     constexpr float feedback_buffer_target = (float)SIZE_UPSAMPLE_CORE0 / 2.0f;
     const float deviation =
         (feedback_buffer_target - (float)get_size_using(&buffer_upsr_data_Lch_0)) / ratio;
     const int32_t adjust_value = saturation_i32((int32_t)deviation, FB_ADJ_LIMIT, -FB_ADJ_LIMIT);
 
-    const uint32_t feedback_fs = audio_state.freq + adjust_value;
+    const uint32_t feedback_fs = freq + adjust_value;
     const uint32_t feedback = (feedback_fs * UINT32_C(16384)) / 1000u;
 
     buffer->data[0] = feedback;
@@ -459,11 +463,17 @@ static bool do_get_current(const struct usb_setup_packet *const setup) {
     if ((setup->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK) == USB_REQ_TYPE_RECIPIENT_INTERFACE) {
         switch (setup->wValue >> 8u) {
             case FEATURE_MUTE_CONTROL: {
-                usb_start_tiny_control_in_transfer(audio_state.mute, 1);
+                usb_start_tiny_control_in_transfer(
+                    atomic_load_explicit(&audio_state.mute, memory_order_relaxed),
+                    1
+                );
                 return true;
             }
             case FEATURE_VOLUME_CONTROL: {
-                usb_start_tiny_control_in_transfer(audio_state.acq_volume, 2);
+                usb_start_tiny_control_in_transfer(
+                    atomic_load_explicit(&audio_state.acq_volume, memory_order_relaxed),
+                    2
+                );
                 return true;
             }
             default:
@@ -473,7 +483,10 @@ static bool do_get_current(const struct usb_setup_packet *const setup) {
         (setup->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK) == USB_REQ_TYPE_RECIPIENT_ENDPOINT
     ) {
         if ((setup->wValue >> 8u) == ENDPOINT_FREQ_CONTROL) {
-            usb_start_tiny_control_in_transfer(audio_state.freq, 3);
+            usb_start_tiny_control_in_transfer(
+                atomic_load_explicit(&audio_state.freq, memory_order_relaxed),
+                3
+            );
             return true;
         }
     }
@@ -538,7 +551,7 @@ static struct {
 } audio_control_cmd_t;
 
 static void audio_set_volume(int16_t volume) {
-    audio_state.acq_volume = volume;
+    atomic_store_explicit(&audio_state.acq_volume, volume, memory_order_relaxed);
     volume_control();
 }
 
@@ -550,8 +563,9 @@ static void audio_cmd_packet(struct usb_endpoint *const ep) {
         if (audio_control_cmd_t.type == USB_REQ_TYPE_RECIPIENT_INTERFACE) {
             switch (audio_control_cmd_t.cs) {
                 case FEATURE_MUTE_CONTROL: {
-                    audio_state.mute = buffer->data[0];
-                    if (audio_state.mute) {
+                    const bool muted = buffer->data[0] != 0;
+                    atomic_store_explicit(&audio_state.mute, muted, memory_order_relaxed);
+                    if (muted) {
                         volume_control(); // ミュート状態にするために音量制御関数を呼び出す
                     }
                     break;
@@ -566,8 +580,8 @@ static void audio_cmd_packet(struct usb_endpoint *const ep) {
         } else if (audio_control_cmd_t.type == USB_REQ_TYPE_RECIPIENT_ENDPOINT) {
             if (audio_control_cmd_t.cs == ENDPOINT_FREQ_CONTROL) {
                 const uint32_t new_freq = (*(uint32_t *)buffer->data) & 0x00ffffffu;
-                if (audio_state.freq != new_freq) {
-                    audio_state.freq = new_freq;
+                if (atomic_load_explicit(&audio_state.freq, memory_order_relaxed) != new_freq) {
+                    atomic_store_explicit(&audio_state.freq, new_freq, memory_order_relaxed);
                     if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M) {
                         ess_dac_mute();
                     }
@@ -576,7 +590,7 @@ static void audio_cmd_packet(struct usb_endpoint *const ep) {
                     clear_ringbuffer(&buffer_upsr_data_Lch_0);
                     clear_ringbuffer(&buffer_upsr_data_Rch_0);
                     clear_bq_filter_delay();
-                    renew_clock(is_high_power_mode);
+                    renew_clock(atomic_load_explicit(&is_high_power_mode, memory_order_relaxed));
                 }
             }
         }
@@ -596,13 +610,13 @@ static bool as_set_alternate(struct usb_interface *const interface, uint alt) {
     assert(interface == &as_op_interface);
     switch (alt) {
         case 3:
-            audio_state.bit_depth = 32;
+            atomic_store_explicit(&audio_state.bit_depth, 32, memory_order_relaxed);
             break;
         case 2:
-            audio_state.bit_depth = 24;
+            atomic_store_explicit(&audio_state.bit_depth, 24, memory_order_relaxed);
             break;
         case 1:
-            audio_state.bit_depth = 16;
+            atomic_store_explicit(&audio_state.bit_depth, 16, memory_order_relaxed);
             break;
         case 0:
         default:
@@ -750,49 +764,51 @@ static void as_audio_packet(struct usb_endpoint *const ep) {
     static bool last_power = false;
     static float fft_gain_ratio = 1.0f;
 
+    const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+    const uint32_t bit_depth = atomic_load_explicit(&audio_state.bit_depth, memory_order_relaxed);
+    const bool power_mode = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+
     // usb epデータコピー
-    length = usb_ep_data_acquire(audio_state.bit_depth, ep_in, length, ep_Lch, ep_Rch);
+    length = usb_ep_data_acquire(bit_depth, freq, ep_in, length, ep_Lch, ep_Rch);
 
-    now_playing++; // この処理が来ているかどうかを確認するための変数
+    atomic_fetch_add_explicit(&now_playing, 1, memory_order_relaxed);
 
-    const bool power_mode = is_high_power_mode;
-    const uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
-    const uint16_t ratio_core1 = get_ratio_upsampling_core1();
-    if (audio_state.freq != last_freq || ratio != last_ratio || ratio_core1 != last_ratio_core1
+    const uint16_t ratio = get_ratio_upsampling_core0_for_power_mode(freq, power_mode);
+    const uint16_t ratio_core1 = get_ratio_upsampling_core1_for_power_mode(power_mode);
+    if (freq != last_freq || ratio != last_ratio || ratio_core1 != last_ratio_core1
         || power_mode != last_power) {
         float gain_core0 = 1.0f;
         if (ratio == 8 && !power_mode) {
             const FFT_FIR_PROFILE *const profile_stage1 =
-                fft_fir_core0_select_profile(audio_state.freq, 4, power_mode);
+                fft_fir_core0_select_profile(freq, 4, power_mode);
             if (profile_stage1) {
                 gain_core0 = profile_stage1->gain_ratio;
             } else {
                 const FFT_FIR_PROFILE *const profile =
-                    fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
+                    fft_fir_core0_select_profile(freq, ratio, power_mode);
                 gain_core0 = profile ? profile->gain_ratio : 1.0f;
             }
         } else {
             const FFT_FIR_PROFILE *const profile =
-                fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
+                fft_fir_core0_select_profile(freq, ratio, power_mode);
             gain_core0 = profile ? profile->gain_ratio : 1.0f;
         }
 
         float gain_core1 = 1.0f;
         if (ratio_core1 > 1) {
-            const uint32_t freq_in =
-                audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+            const uint32_t freq_in = freq * ratio;
             const FFT_FIR_PROFILE *const profile =
                 fft_fir_core0_select_profile(freq_in, ratio_core1, power_mode);
             gain_core1 = profile ? profile->gain_ratio : 1.0f;
         }
         fft_gain_ratio = gain_core0 * gain_core1;
-        last_freq = audio_state.freq;
+        last_freq = freq;
         last_ratio = ratio;
         last_ratio_core1 = ratio_core1;
         last_power = power_mode;
     }
 
-    const float volume = audio_state.vol_float;
+    const float volume = atomic_load_explicit(&audio_state.vol_float, memory_order_relaxed);
     const float scale = volume * DEFAULT_GAIN_RATIO * fft_gain_ratio;
     arm_scale_f32(ep_Lch, scale, ep_Lch, length);
     arm_scale_f32(ep_Rch, scale, ep_Rch, length);

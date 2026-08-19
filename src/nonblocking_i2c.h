@@ -22,10 +22,11 @@ typedef struct I2C_RB_DATA {
 } I2C_RB_DATA;
 
 typedef struct RB_I2C {
-    volatile uint16_t size_buffer;
-    volatile uint16_t write_point;
-    volatile uint16_t read_point;
-    volatile int16_t size_using;
+    uint16_t size_buffer;
+    // Queue payload access is serialized by masking Core0 IRQs.
+    _Atomic uint16_t write_point;
+    _Atomic uint16_t read_point;
+    _Atomic int16_t size_using;
     I2C_RB_DATA *buffer;
 } I2C_RINGBUFFER;
 

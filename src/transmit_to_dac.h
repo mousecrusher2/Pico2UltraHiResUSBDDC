@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 ArqAlice 
+* Copyright (c) 2025 ArqAlice
 *
 * Released under the MIT license
 * https://opensource.org/licenses/mit-license.php
@@ -26,14 +26,13 @@ typedef struct {
 
 typedef struct {
     DMA_TX_DATA data[DEPTH_DMA_TX_BUFFER];
-    volatile uint32_t wp;
-    volatile uint32_t rp;
-    volatile uint32_t using;
-    volatile uint32_t prev_write_length;
+    uint32_t wp;
+    uint32_t rp;
+    uint32_t using;
 } DMA_TX_STRUCTURE;
 
-extern bool enable_output;
-extern volatile absolute_time_t time_start_output;
+extern _Atomic bool enable_output;
+extern _Atomic absolute_time_t time_start_output;
 
 void init_i2s_interface(void);
 void reset_i2s_freq(void);

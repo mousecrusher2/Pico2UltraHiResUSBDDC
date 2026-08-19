@@ -8,12 +8,14 @@
 #include <pico/stdlib.h>
 #include "common.h"
 #include "transmit_to_dac.h"
+#include "upsampling.h"
 
 void core1_main(void) { // NOLINT(misc-use-internal-linkage): launched from main.c.
     // I2S初期化
     init_i2s_interface();
 
     while (true) {
+        service_core1_upsampling_reset();
         if (TEST_MODE) {
             gpio_put(TEST_PIN2, true);
         }

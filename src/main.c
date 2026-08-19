@@ -5,6 +5,7 @@
  * https://opensource.org/licenses/mit-license.php
  */
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <hardware/clocks.h>
 #include <hardware/vreg.h>
@@ -20,7 +21,7 @@
 #include "usb_device_control.h"
 
 // パワー管理
-volatile bool is_high_power_mode = true;
+_Atomic bool is_high_power_mode = true;
 
 // 処理タイミング制御用
 static constexpr int64_t MILLISEC50 = INT64_C(500000) / TIMER0_US;
@@ -42,19 +43,24 @@ static int32_t buffer_upsr_data_Rch_0_storage[SIZE_UPSAMPLE_CORE0];
 I2C_RINGBUFFER i2c_ringbuffer0; // NOLINT(misc-use-internal-linkage): used by ess_specific.c.
 
 // Audio State
-AUDIO_STATE audio_state;
-uint32_t now_playing = 0;
-static uint32_t now_playing_old = 0;
+AUDIO_STATE audio_state = {
+    .freq = AUDIO_INITIAL_FREQ,
+    .bit_depth = 16,
+    .now_volume = 0,
+    .acq_volume = 0,
+    .vol_float = 0.0f,
+    .vol_mul = 0,
+    .vol_shift = 0,
+    .mute = false,
+};
+_Atomic uint32_t now_playing = 0;
 static bool is_cleared_buffer = false;
 
 // 出力開始時間
 // NOLINTNEXTLINE(misc-use-internal-linkage): used by transmit_to_dac.c.
-volatile absolute_time_t time_start_output;
+_Atomic absolute_time_t time_start_output = 0;
 
 static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *const t);
-
-// I2C送信インターバル
-static volatile absolute_time_t time_start_i2c_transfer = 0;
 
 void cancel_timer0(void) {
     cancel_repeating_timer(&timer0);
@@ -69,24 +75,25 @@ static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *co
     (void)t;
     // ES9038Q2Mの周波数切り替え時のノイズ対策
     if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute()) {
-        if (enable_output) {
-            const int64_t elapsed_us =
-                absolute_time_diff_us(time_start_output, get_absolute_time());
+        if (atomic_load_explicit(&enable_output, memory_order_acquire)) {
+            const int64_t elapsed_us = absolute_time_diff_us(
+                atomic_load_explicit(&time_start_output, memory_order_relaxed),
+                get_absolute_time()
+            );
             if (elapsed_us > TIME_ES9038Q2M_DEPOP_USEC) {
                 ess_dac_unmute();
             }
         }
     }
 
-    // volatile static uint32_t now_playing_old = 0;
-    static volatile int count = 0;
+    static int count = 0;
     count++;
     if (count >= MILLISEC50) {
         // パワーモード切り替え
         if (gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) {
             // HiPowerMode
-            if (!is_high_power_mode) {
-                is_high_power_mode = true;
+            if (!atomic_load_explicit(&is_high_power_mode, memory_order_relaxed)) {
+                atomic_store_explicit(&is_high_power_mode, true, memory_order_relaxed);
                 if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M) {
                     ess_dac_mute();
                 }
@@ -95,12 +102,12 @@ static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *co
                 clear_ringbuffer(&buffer_upsr_data_Lch_0);
                 clear_ringbuffer(&buffer_upsr_data_Rch_0);
                 clear_bq_filter_delay();
-                renew_clock(is_high_power_mode);
+                renew_clock(true);
             }
         } else {
             // LoPowerMode
-            if (is_high_power_mode) {
-                is_high_power_mode = false;
+            if (atomic_load_explicit(&is_high_power_mode, memory_order_relaxed)) {
+                atomic_store_explicit(&is_high_power_mode, false, memory_order_relaxed);
                 if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M) {
                     ess_dac_mute();
                 }
@@ -109,28 +116,27 @@ static bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *co
                 clear_ringbuffer(&buffer_upsr_data_Lch_0);
                 clear_ringbuffer(&buffer_upsr_data_Rch_0);
                 clear_bq_filter_delay();
-                renew_clock(is_high_power_mode);
+                renew_clock(false);
             }
         }
 
-        gpio_put(ONBOARD_LED_PIN, is_high_power_mode);
+        gpio_put(ONBOARD_LED_PIN, atomic_load_explicit(&is_high_power_mode, memory_order_relaxed));
 
         // 再生停止時にアップサンプリングフラグとバッファをクリアする
-        if ((now_playing == now_playing_old) && (!is_cleared_buffer)) {
+        const uint32_t received_packet_count =
+            atomic_exchange_explicit(&now_playing, 0, memory_order_relaxed);
+        if (received_packet_count == 0 && !is_cleared_buffer) {
             clear_ringbuffer(&buffer_ep_Lch);
             clear_ringbuffer(&buffer_ep_Rch);
             clear_ringbuffer(&buffer_upsr_data_Lch_0);
             clear_ringbuffer(&buffer_upsr_data_Rch_0);
             clear_bq_filter_delay();
             // i2c_dma_stop_and_clear();
-            renew_clock(is_high_power_mode);
-            now_playing = 0;
+            renew_clock(atomic_load_explicit(&is_high_power_mode, memory_order_relaxed));
             is_cleared_buffer = true;
-        } else if (now_playing != now_playing_old) {
+        } else if (received_packet_count != 0) {
             is_cleared_buffer = false;
         }
-
-        now_playing_old = now_playing;
 
         count = 0;
     }
@@ -191,11 +197,6 @@ int main(void) {
         &buffer_upsr_data_Rch_0
     ); // Core1転送用
 
-    // オーディオステータス初期化
-    audio_state.freq = AUDIO_INITIAL_FREQ;
-    audio_state.bit_depth = 16;
-    audio_state.mute = false;
-
     // パワーモード切り替え用
     gpio_init(POWER_MODE_SWITCH_PIN);
     gpio_set_dir(POWER_MODE_SWITCH_PIN, GPIO_IN);
@@ -244,6 +245,7 @@ int main(void) {
     sleep_ms(100);
 
     // watchdog_enable(50, 1);
+    absolute_time_t time_start_i2c_transfer = 0;
 
     while (true) {
         // watchdog_update();

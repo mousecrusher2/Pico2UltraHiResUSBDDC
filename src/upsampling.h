@@ -72,8 +72,7 @@ extern const uint32_t size_coef_fir_filter_384k;
 
 void init_upsampling_filter(void);
 void clear_bq_filter_delay(void);
-void clear_core1_halfband_state(void);
-void clear_core1_polyphase_state(void);
+void service_core1_upsampling_reset(void);
 void __not_in_flash_func(upsampling_process_core0)(void);
 uint32_t __not_in_flash_func(upsampling_process_core1)(
     const float *in_L,

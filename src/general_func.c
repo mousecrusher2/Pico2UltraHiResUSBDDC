@@ -6,6 +6,8 @@
  */
 
 #include <math.h>
+#include <stdatomic.h>
+#include <stdint.h>
 #include <hardware/clocks.h>
 #include <hardware/gpio.h>
 #include <hardware/i2c.h>
@@ -16,7 +18,8 @@
 
 static void renew_cpu_clock(bool is_high_power) {
     // CPUクロックを再設定
-    switch (audio_state.freq) {
+    const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+    switch (freq) {
         case 192000:
         case 96000:
         case 48000:
@@ -84,18 +87,24 @@ void setup_I2C(void) {
 }
 
 void volume_control(void) {
-    if (!audio_state.mute) {
+    const bool muted = atomic_load_explicit(&audio_state.mute, memory_order_relaxed);
+    const int16_t volume = atomic_load_explicit(&audio_state.acq_volume, memory_order_relaxed);
+    if (!muted) {
         if (ENABLE_ESS_DAC_VOLUME) {
-            audio_state.vol_float = 1.0f;
+            atomic_store_explicit(&audio_state.vol_float, 1.0f, memory_order_relaxed);
             ess_dac_volume();
         } else {
-            audio_state.vol_float = saturation_f32(
-                powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f),
-                1.0f,
-                0.0f
+            atomic_store_explicit(
+                &audio_state.vol_float,
+                saturation_f32(
+                    powf(10.0f, (float)volume / (float)VOLUME_RESOLUTION / 20.0f),
+                    1.0f,
+                    0.0f
+                ),
+                memory_order_relaxed
             );
         }
     } else {
-        audio_state.vol_float = 0.0f;
+        atomic_store_explicit(&audio_state.vol_float, 0.0f, memory_order_relaxed);
     }
 }

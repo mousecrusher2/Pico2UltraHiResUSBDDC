@@ -8,6 +8,7 @@
 #ifndef PICO2_COMMON_H
 #define PICO2_COMMON_H
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <hardware/i2c.h>
 #include <hardware/vreg.h>
@@ -149,15 +150,16 @@ static constexpr uint16_t SIZE_I2C_RINGBUFFER = 8;
 static constexpr uint8_t SIZE_I2C_TRANSFER_MAX = 32;
 static constexpr int64_t I2C_ESS_DAC_TRANSFER_INTERVAL_USEC = INT64_C(90);
 
+// USB IRQ, timer IRQ, Core0, and Core1 all observe these fields.
 typedef struct {
-    uint32_t freq; // 周波数系列軸・倍率軸用(既存)
-    uint32_t bit_depth; // ビット深度軸用(追加)
-    int16_t now_volume;
-    int16_t acq_volume;
-    float vol_float;
-    int16_t vol_mul;
-    uint32_t vol_shift;
-    bool mute;
+    _Atomic uint32_t freq; // 周波数系列軸・倍率軸用(既存)
+    _Atomic uint32_t bit_depth; // ビット深度軸用(追加)
+    _Atomic int16_t now_volume;
+    _Atomic int16_t acq_volume;
+    _Atomic float vol_float;
+    _Atomic int16_t vol_mul;
+    _Atomic uint32_t vol_shift;
+    _Atomic bool mute;
 } AUDIO_STATE;
 
 extern RINGBUFFER buffer_ep_Lch;
@@ -166,8 +168,8 @@ extern RINGBUFFER buffer_upsr_data_Lch_0;
 extern RINGBUFFER buffer_upsr_data_Rch_0;
 
 extern AUDIO_STATE audio_state;
-extern volatile bool is_high_power_mode;
-extern uint32_t now_playing;
+extern _Atomic bool is_high_power_mode;
+extern _Atomic uint32_t now_playing;
 extern uint16_t length_remain_to_I2S_FIFO;
 
 uint32_t calc_pwm_period_us(float period_us, uint16_t prescale);
@@ -198,8 +200,8 @@ static inline float saturation_f32(float in, float max, float min) {
 }
 
 // アップサンプリング倍率取得関数(Core0)
-static inline uint16_t get_ratio_upsampling_core0(uint32_t freq) {
-    const uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
+static inline uint16_t get_ratio_upsampling_core0_for_power_mode(uint32_t freq, bool high_power) {
+    const uint16_t base = high_power ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
     uint16_t ratio;
     switch (freq) {
         case 192000:
@@ -223,12 +225,22 @@ static inline uint16_t get_ratio_upsampling_core0(uint32_t freq) {
     return ratio;
 }
 
-static inline uint16_t get_ratio_upsampling_core1(void) {
-    const uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
+static inline uint16_t get_ratio_upsampling_core0(uint32_t freq) {
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+    return get_ratio_upsampling_core0_for_power_mode(freq, high_power);
+}
+
+static inline uint16_t get_ratio_upsampling_core1_for_power_mode(bool high_power) {
+    const uint16_t ratio = high_power ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
     if (ratio == 0) {
         return 1;
     }
     return ratio;
+}
+
+static inline uint16_t get_ratio_upsampling_core1(void) {
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+    return get_ratio_upsampling_core1_for_power_mode(high_power);
 }
 
 #endif

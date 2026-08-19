@@ -12,7 +12,6 @@
 #include <pico/stdlib.h>
 #include "fft_fir_coef.h"
 
-void fft_fir_core1_init(void);
 void fft_fir_core1_reset(void);
 const FFT_FIR_PROFILE *fft_fir_core1_select_profile(
     uint32_t freq,

@@ -7,22 +7,25 @@
 
 #include "ess_specific.h"
 #include <math.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <hardware/gpio.h>
 #include <hardware/i2c.h>
 #include "common.h"
 #include "nonblocking_i2c.h"
 
-static bool is_ess_dac_mute = false;
-static const uint8_t i2c_ess_dac_address_7bit = (uint8_t)((uint32_t)I2C_ESS_DAC_ADDR >> 1u);
+static _Atomic bool depop_mute_active = false;
+static constexpr uint8_t i2c_ess_dac_address_7bit = (uint8_t)((uint32_t)I2C_ESS_DAC_ADDR >> 1u);
 
 void ess_dac_i2c_setup(void) {
     uint8_t i2cbuf[2] = {0, 0};
 
     if (KIND_ESS_DAC == ES9010K2M) {
-        const uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
-        const uint16_t ratio_core1 = get_ratio_upsampling_core1();
-        const uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
+        const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+        const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+        const uint16_t ratio_core0 = get_ratio_upsampling_core0_for_power_mode(freq, high_power);
+        const uint16_t ratio_core1 = get_ratio_upsampling_core1_for_power_mode(high_power);
+        const uint32_t output_fs = freq * ratio_core0 * ratio_core1;
         if (output_fs > 300000) {
             // 内蔵アップサンプリングを使用しない
             i2cbuf[0] = 0x15; // Resister 21
@@ -36,9 +39,7 @@ void ess_dac_i2c_setup(void) {
         i2cbuf[1] = 0xC8; // default 0x5A, 0xB0~C8くらいから動く
         i2c_write_blocking(I2C_PORT, i2c_ess_dac_address_7bit, i2cbuf, 2, true);
         sleep_ms(1);
-    }
-
-    else if (KIND_ESS_DAC == ES9038Q2M) {
+    } else if (KIND_ESS_DAC == ES9038Q2M) {
         // MCLK設定
         i2cbuf[0] = 0x00; // Resister #0 System Resisters
         i2cbuf[1] = 0x00; // 1/1
@@ -100,12 +101,12 @@ void ess_dac_i2c_setup(void) {
         i2cbuf[1] = 0x00; // 最大ボリューム
         i2c_write_blocking(I2C_PORT, i2c_ess_dac_address_7bit, i2cbuf, 2, true);
         sleep_ms(1);
-    }
-
-    else if (KIND_ESS_DAC == ES9039Q2M) {
-        const uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
-        const uint16_t ratio_core1 = get_ratio_upsampling_core1();
-        const uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
+    } else if (KIND_ESS_DAC == ES9039Q2M) {
+        const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+        const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+        const uint16_t ratio_core0 = get_ratio_upsampling_core0_for_power_mode(freq, high_power);
+        const uint16_t ratio_core1 = get_ratio_upsampling_core1_for_power_mode(high_power);
+        const uint32_t output_fs = freq * ratio_core0 * ratio_core1;
 
         // CLK GEAR SELECT
         i2cbuf[0] = 0x05; // Resister 5: CLK GEAR SELECT
@@ -189,9 +190,11 @@ void ess_dac_i2c_setup(void) {
         i2c_write_blocking(I2C_PORT, i2c_ess_dac_address_7bit, i2cbuf, 2, true);
         sleep_ms(1);
     } else if (KIND_ESS_DAC == ES9039PRO) {
-        const uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
-        const uint16_t ratio_core1 = get_ratio_upsampling_core1();
-        const uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
+        const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+        const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
+        const uint16_t ratio_core0 = get_ratio_upsampling_core0_for_power_mode(freq, high_power);
+        const uint16_t ratio_core1 = get_ratio_upsampling_core1_for_power_mode(high_power);
+        const uint32_t output_fs = freq * ratio_core0 * ratio_core1;
 
         // 768kHz入力を有効化し、DACを有効化する
         i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
@@ -484,18 +487,19 @@ void ess_dac_activate(void) {
 }
 
 bool get_ess_dac_mute(void) {
-    return is_ess_dac_mute;
+    return atomic_load_explicit(&depop_mute_active, memory_order_relaxed);
 }
 
 void ess_dac_volume(void) {
     static int16_t volume = 0;
-    if (audio_state.acq_volume != volume) {
+    const int16_t requested_volume =
+        atomic_load_explicit(&audio_state.acq_volume, memory_order_relaxed);
+    if (requested_volume != volume) {
         uint8_t i2cbuf[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         I2C_RB_DATA i2c_rb_buf;
 
         if (KIND_ESS_DAC == ES9038Q2M) {
-            const float vol_dB_2 =
-                -saturation_f32((float)audio_state.acq_volume / 128.0f, 0.0f, -256.0f);
+            const float vol_dB_2 = -saturation_f32((float)requested_volume / 128.0f, 0.0f, -256.0f);
             i2cbuf[0] = 0x0F; // Resister #15 volume1
             i2cbuf[1] = (uint8_t)vol_dB_2;
             i2cbuf[2] = (uint8_t)vol_dB_2;
@@ -506,7 +510,7 @@ void ess_dac_volume(void) {
             // THD compensationの音量による影響を補正する
             if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN) {
                 const float vol = saturation_f32(
-                    powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f),
+                    powf(10.0f, (float)requested_volume / (float)VOLUME_RESOLUTION / 20.0f),
                     1.0f,
                     0.001f
                 );
@@ -530,8 +534,7 @@ void ess_dac_volume(void) {
                 i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
             }
         } else if (KIND_ESS_DAC == ES9039Q2M) {
-            const float vol_dB_2 =
-                -saturation_f32((float)audio_state.acq_volume / 128.0f, 0.0f, -256.0f);
+            const float vol_dB_2 = -saturation_f32((float)requested_volume / 128.0f, 0.0f, -256.0f);
             i2cbuf[0] = 0x4A; // Resister #74 volume ch1
             i2cbuf[1] = (uint8_t)vol_dB_2;
             i2cbuf[2] = (uint8_t)vol_dB_2;
@@ -542,7 +545,7 @@ void ess_dac_volume(void) {
             // THD compensationの音量による影響を補正する
             if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN) {
                 const float vol = saturation_f32(
-                    powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f),
+                    powf(10.0f, (float)requested_volume / (float)VOLUME_RESOLUTION / 20.0f),
                     1.0f,
                     0.001f
                 );
@@ -586,8 +589,7 @@ void ess_dac_volume(void) {
                 i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
             }
         } else if (KIND_ESS_DAC == ES9039PRO) {
-            const float vol_dB_2 =
-                -saturation_f32((float)audio_state.acq_volume / 128.0f, 0.0f, -256.0f);
+            const float vol_dB_2 = -saturation_f32((float)requested_volume / 128.0f, 0.0f, -256.0f);
             i2cbuf[0] = 0x4A; // Resister #74 volume ch1
             i2cbuf[1] = (uint8_t)vol_dB_2;
             i2cbuf[2] = (uint8_t)vol_dB_2;
@@ -604,7 +606,7 @@ void ess_dac_volume(void) {
             // THD compensationの音量による影響を補正する
             if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN) {
                 const float vol = saturation_f32(
-                    powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f),
+                    powf(10.0f, (float)requested_volume / (float)VOLUME_RESOLUTION / 20.0f),
                     1.0f,
                     0.001f
                 );
@@ -672,7 +674,7 @@ void ess_dac_volume(void) {
             }
         }
     }
-    volume = audio_state.acq_volume;
+    volume = requested_volume;
 }
 
 void ess_dac_mute(void) {
@@ -686,7 +688,7 @@ void ess_dac_mute(void) {
         i2c_ringbuf_set_data(I2C_PORT, i2c_ess_dac_address_7bit, i2cbuf, 2, false, &i2c_rb_buf);
         i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
     }
-    is_ess_dac_mute = true;
+    atomic_store_explicit(&depop_mute_active, true, memory_order_relaxed);
 }
 
 void ess_dac_unmute(void) {
@@ -700,5 +702,5 @@ void ess_dac_unmute(void) {
         i2c_ringbuf_set_data(I2C_PORT, i2c_ess_dac_address_7bit, i2cbuf, 2, false, &i2c_rb_buf);
         i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
     }
-    is_ess_dac_mute = false;
+    atomic_store_explicit(&depop_mute_active, false, memory_order_relaxed);
 }

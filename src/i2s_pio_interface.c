@@ -6,6 +6,8 @@
 */
 
 #include "i2s_pio_interface.h"
+#include <stdatomic.h>
+#include <stdint.h>
 #include <hardware/clocks.h>
 #include "common.h"
 #include "i2s.pio.h"
@@ -41,8 +43,10 @@ void I2S_16bit_program_init(
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
     const float div = (float)clock_get_hz(clk_sys)
-        / (float)(freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1() * 128u);
+        / (float)(freq * get_ratio_upsampling_core0_for_power_mode(freq, high_power)
+            * get_ratio_upsampling_core1_for_power_mode(high_power) * 128u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -78,8 +82,10 @@ void I2S_32bit_program_init(
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
     const float div = (float)clock_get_hz(clk_sys)
-        / (float)(freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1() * 128u);
+        / (float)(freq * get_ratio_upsampling_core0_for_power_mode(freq, high_power)
+            * get_ratio_upsampling_core1_for_power_mode(high_power) * 128u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -115,8 +121,10 @@ void I2S_32bit_inv_program_init(
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, sideset_base);
     sm_config_set_out_shift(&sm_config, false, true, 32);
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
     const float div = (float)clock_get_hz(clk_sys)
-        / (float)(freq * get_ratio_upsampling_core0(freq) * get_ratio_upsampling_core1() * 128u);
+        / (float)(freq * get_ratio_upsampling_core0_for_power_mode(freq, high_power)
+            * get_ratio_upsampling_core1_for_power_mode(high_power) * 128u);
     sm_config_set_clkdiv(&sm_config, div);
 
     pio_sm_init(pio, sm, offset, &sm_config);
@@ -130,9 +138,11 @@ void I2S_32bit_inv_program_init(
 void I2S_freq_init(PIO pio, uint sm, pio_sm_config *const sm_config, uint offset) {
     pio_sm_set_enabled(pio, sm, false);
 
+    const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+    const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
     const float div = (float)clock_get_hz(clk_sys)
-        / (float)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq)
-            * get_ratio_upsampling_core1() * 128u);
+        / (float)(freq * get_ratio_upsampling_core0_for_power_mode(freq, high_power)
+            * get_ratio_upsampling_core1_for_power_mode(high_power) * 128u);
     sm_config_set_clkdiv(sm_config, div);
     pio_sm_init(pio, sm, offset, sm_config);
     pio_sm_set_enabled(pio, sm, true);

@@ -6,6 +6,7 @@
 */
 
 #include "transmit_to_dac.h"
+#include <stdatomic.h>
 #include <stdint.h>
 #include <string.h>
 #include <hardware/dma.h>
@@ -25,17 +26,25 @@ typedef enum {
     DMA_CH_STATE_RUNNING
 } dma_ch_state_t;
 
-static volatile int dma_ch[DMA_TX_CHAIN_CHANNELS];
+static int dma_ch[DMA_TX_CHAIN_CHANNELS];
 static dma_channel_config c_dma[DMA_TX_CHAIN_CHANNELS];
-static volatile uint8_t dma_ch_state[DMA_TX_CHAIN_CHANNELS];
+static uint8_t dma_ch_state[DMA_TX_CHAIN_CHANNELS];
 static DMA_TX_STRUCTURE dma_tx;
+// Core1 owns the DMA/PIO state. Core0 communicates with it only through these atomics.
+static _Atomic bool dma_stop_requested;
+static _Atomic bool dma_stop_completed;
+static _Atomic bool i2s_reset_requested;
+static _Atomic bool i2s_reset_completed;
 
-bool enable_output = false; // NOLINT(misc-use-internal-linkage): read by main.c.
+_Atomic bool enable_output = false; // NOLINT(misc-use-internal-linkage): read by main.c.
 
 void __not_in_flash_func(dma_tx_start)(void);
 static inline uint32_t dma_tx_active_count(void);
 static inline bool dma_tx_any_running(void);
 static void __not_in_flash_func(dma_tx_chain_service)(void);
+static void reset_i2s_freq_core1(void);
+static void dma_stop_and_clear_core1(void);
+static bool __not_in_flash_func(service_control_requests)(void);
 
 static inline uint32_t dma_tx_active_count(void) {
     uint32_t count = 0;
@@ -121,8 +130,21 @@ static void __not_in_flash_func(dma_tx_chain_service)(void) {
     }
 }
 
-void reset_i2s_freq(void) {
+static void reset_i2s_freq_core1(void) {
     I2S_freq_init(pio, sm, &sm_config, offset);
+}
+
+void reset_i2s_freq(void) {
+    if (get_core_num() == 1) {
+        reset_i2s_freq_core1();
+        return;
+    }
+
+    atomic_store_explicit(&i2s_reset_completed, false, memory_order_relaxed);
+    atomic_store_explicit(&i2s_reset_requested, true, memory_order_release);
+    while (!atomic_load_explicit(&i2s_reset_completed, memory_order_acquire)) {
+        tight_loop_contents();
+    }
 }
 
 void init_i2s_interface(void) {
@@ -161,7 +183,7 @@ void init_i2s_interface(void) {
         );
     }
 
-    reset_i2s_freq();
+    reset_i2s_freq_core1();
 
     // DMA setup (chained, no IRQ)
     dma_ch[0] = dma_claim_unused_channel(true);
@@ -177,8 +199,8 @@ void init_i2s_interface(void) {
     channel_config_set_dreq(&c_dma[1], pio_get_dreq(pio, sm, true));
     channel_config_set_chain_to(&c_dma[1], dma_ch[0]);
 
-    memset((void *)&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
-    memset((void *)dma_ch_state, 0, sizeof(dma_ch_state));
+    memset(&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
+    memset(dma_ch_state, 0, sizeof(dma_ch_state));
 
     dma_channel_set_irq0_enabled(dma_ch[0], false);
     dma_channel_set_irq0_enabled(dma_ch[1], false);
@@ -195,41 +217,43 @@ static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 
 // 転送用バッファを静的確保
 
-// 出力状態バッファ
-static volatile bool enable_output_prev = false;
-
 void __not_in_flash_func(dma_tx_start)(void) {
+    if (service_control_requests()) {
+        return;
+    }
+
     const int32_t length = (int32_t)get_size_using(&buffer_upsr_data_Lch_0);
+    bool output_enabled = atomic_load_explicit(&enable_output, memory_order_relaxed);
 
     // バッファに規定量以上のデータが溜まってから出力開始
-    if (length > SIZE_BUFFER_FB_THRESHOLD) {
-        enable_output = true;
-    }
-
-    // 入ってくるデータが枯渇したうえで、DMA送信バッファ内のすべてのデータを送信完了したら出力停止
-    else if ((length <= 0) && (dma_tx.using == 0)) {
-        enable_output = false;
-    }
-
-    // 出力開始した時間を取得
-    if (enable_output && !enable_output_prev) {
-        time_start_output = get_absolute_time();
+    if (!output_enabled && length > SIZE_BUFFER_FB_THRESHOLD) {
+        atomic_store_explicit(&time_start_output, get_absolute_time(), memory_order_relaxed);
         // Resync I2S frame phase on playback start to prevent L/R swap.
         pio_sm_set_enabled(pio, sm, false);
         pio_sm_clear_fifos(pio, sm);
         pio_sm_restart(pio, sm);
-        reset_i2s_freq();
+        reset_i2s_freq_core1();
+        atomic_store_explicit(&enable_output, true, memory_order_release);
+        output_enabled = true;
     }
-    enable_output_prev = enable_output;
 
-    if (enable_output) {
+    // 入ってくるデータが枯渇したうえで、DMA送信バッファ内のすべてのデータを送信完了したら出力停止
+    else if (output_enabled && length <= 0 && dma_tx.using == 0) {
+        atomic_store_explicit(&enable_output, false, memory_order_release);
+        output_enabled = false;
+    }
+
+    if (output_enabled) {
         // 入ってくるデータが枯渇した、またはDMA送信バッファに規定量以上データが蓄積されているときはデータ送信処理をしない
         if ((length > 0) && (dma_tx.using < SIZE_DMA_TX_BUF_STACK)) {
+            const uint32_t freq = atomic_load_explicit(&audio_state.freq, memory_order_relaxed);
+            const bool high_power = atomic_load_explicit(&is_high_power_mode, memory_order_relaxed);
             const uint32_t core1_block_len = upsampling_core1_get_block_len();
             constexpr int32_t max_in_len =
                 (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
             int32_t transmit_ref_size =
-                (int32_t)((float)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq))
+                (int32_t)((float)(freq
+                              * get_ratio_upsampling_core0_for_power_mode(freq, high_power))
                     / 1000.0f * (CORE1_PROCESS_US / 1000.0f));
             if (transmit_ref_size > max_in_len) {
                 transmit_ref_size = max_in_len;
@@ -305,11 +329,11 @@ void __not_in_flash_func(dma_tx_start)(void) {
         }
         dma_tx_chain_service();
     } else {
-        dma_stop_and_clear();
+        dma_stop_and_clear_core1();
     }
 }
 
-void dma_stop_and_clear(void) {
+static void dma_stop_and_clear_core1(void) {
     // DMAを強制停止
     for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++) {
         dma_channel_abort(dma_ch[i]);
@@ -322,6 +346,34 @@ void dma_stop_and_clear(void) {
     pio_sm_clear_fifos(pio0, 0);
 
     // 使用バッファをゼロクリア
-    memset((void *)&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
-    memset((void *)dma_ch_state, 0, sizeof(dma_ch_state));
+    memset(&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
+    memset(dma_ch_state, 0, sizeof(dma_ch_state));
+}
+
+void dma_stop_and_clear(void) {
+    if (get_core_num() == 1) {
+        dma_stop_and_clear_core1();
+        return;
+    }
+
+    atomic_store_explicit(&dma_stop_completed, false, memory_order_relaxed);
+    atomic_store_explicit(&dma_stop_requested, true, memory_order_release);
+    while (!atomic_load_explicit(&dma_stop_completed, memory_order_acquire)) {
+        tight_loop_contents();
+    }
+}
+
+static bool __not_in_flash_func(service_control_requests)(void) {
+    bool serviced = false;
+    if (atomic_exchange_explicit(&dma_stop_requested, false, memory_order_acq_rel)) {
+        dma_stop_and_clear_core1();
+        atomic_store_explicit(&dma_stop_completed, true, memory_order_release);
+        serviced = true;
+    }
+    if (atomic_exchange_explicit(&i2s_reset_requested, false, memory_order_acq_rel)) {
+        reset_i2s_freq_core1();
+        atomic_store_explicit(&i2s_reset_completed, true, memory_order_release);
+        serviced = true;
+    }
+    return serviced;
 }
